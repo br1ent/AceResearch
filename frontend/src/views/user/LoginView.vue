@@ -16,7 +16,7 @@
         </div>
         <button class="btn btn-neutral w-full">登录</button>
         <p class="text-center text-sm mt-3 text-base-content/60">
-          没有账号？<router-link to="/register" class="link link-neutral link-hover">注册</router-link>
+          没有账号？<router-link :to="{name: 'user-register-index'}" class="link link-neutral link-hover">注册</router-link>
         </p>
       </div>
     </div>
