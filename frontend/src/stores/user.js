@@ -4,9 +4,9 @@ import { defineStore } from 'pinia'
 export const useUserStore = defineStore('user', () => {
   const id = ref(0)
   const username = ref("")
-  const photo = ref("https://cdn.acwing.com/media/user/profile/photo/229665_lg_6d5d2ba705.jpg")
   const email = ref("")
-  const accessToken = ref("sd")
+  const photo = ref("")
+  const accessToken = ref("")
   const hasPullUserInfo = ref(false)
 
 

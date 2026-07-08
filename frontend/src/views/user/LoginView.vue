@@ -1,24 +1,45 @@
 <script setup>
+
+import {ref} from "vue";
+
+const email = ref("")
+const password = ref("")
+const errorMessage = ref("")
+
+function handleLogin() {
+  errorMessage.value = ""
+
+  console.log("login")
+}
 </script>
 
 <template>
   <main class="flex-1 flex items-center justify-center px-5 py-10 mt-15">
-    <div class="card w-full max-w-sm bg-base-100 shadow-xl">
+    <form @submit.prevent="handleLogin" class="card w-full max-w-sm bg-base-100 shadow-xl">
       <div class="card-body">
         <h2 class="card-title text-xl justify-center mb-2">登录</h2>
         <div class="form-control mb-3">
           <label class="label"><span class="label-text">邮箱</span></label>
-          <input type="email" class="input input-bordered w-full" />
+          <input type="email" class="input input-bordered w-full" v-model="email"/>
         </div>
         <div class="form-control mb-4">
           <label class="label"><span class="label-text">密码</span></label>
-          <input type="password" class="input input-bordered w-full" />
+          <input type="password" class="input input-bordered w-full" v-model="password" />
         </div>
+
+        <div v-if="errorMessage" class="text-error text-base">
+          {{errorMessage}}
+        </div>
+
         <button class="btn btn-neutral w-full">登录</button>
         <p class="text-center text-sm mt-3 text-base-content/60">
-          没有账号？<router-link :to="{name: 'user-register-index'}" class="link link-neutral link-hover">注册</router-link>
+          没有账号？
+          <router-link :to="{name: 'user-register-index'}" class="link link-neutral link-hover">注册</router-link>
+        </p>
+        <p class="text-center text-sm text-base-content/60">
+          <router-link :to="{name: 'user-resetpwd-index'}" class="link link-neutral link-hover">忘记密码？</router-link>
         </p>
       </div>
-    </div>
+    </form>
   </main>
 </template>

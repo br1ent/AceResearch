@@ -1,3 +1,3 @@
-from backend.config.database import Base
+from config.database import Base
 
 __all__ = ["Base"]
