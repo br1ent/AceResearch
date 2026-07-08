@@ -5,7 +5,7 @@ class UserLogin(BaseModel):
     password: str
 
 class UserOut(BaseModel):
-    user_id: int
+    id: int
     email: str
     username: str
     photo: str
