@@ -40,8 +40,7 @@ async function handleLogin() {
       } else {
         errorMessage.value = data.message
       }
-    } catch (e) {
-      console.error(e)
+    } catch {
     }
   }
 }
