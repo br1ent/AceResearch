@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import http, { setAccessToken, getAccessToken } from '@/js/http/api.js'
+import http, { setAccessToken as setApiToken, getAccessToken } from '@/js/http/api.js'
 
 export const useUserStore = defineStore('user', () => {
   const id = ref(0)
@@ -48,6 +48,6 @@ export const useUserStore = defineStore('user', () => {
     setAccessToken,
     setHasPullUserInfo,
     logout,
-    isLogin
+    isLogin,
   }
 })

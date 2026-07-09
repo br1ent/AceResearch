@@ -2,13 +2,49 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user.js";
+import http from "@/js/http/api.js";
 
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
 
 const router = useRouter();
-const userStore = useUserStore();
+const user = useUserStore();
+
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+async function handleLogin() {
+  errorMessage.value = ""
+
+  if (!email.value) {
+    errorMessage.value = "邮箱不能为空!"
+  } else if (!EMAIL_RE.test(email.value)) {
+    errorMessage.value = "邮箱格式不正确!"
+  } else if (!password.value) {
+    errorMessage.value = "密码不能为空!"
+  } else if (password.value.length < 6) {
+    errorMessage.value = "密码不能少于6位!"
+  } else {
+    try {
+       const res = await http.post("/api/user/login", {
+         email: email.value,
+         password: password.value
+       })
+
+      const data = res.data
+      if (data.success) {
+        user.setAccessToken(data.data.access_token)
+        user.setUserInfo(data.data.user)
+
+        await router.push({name: 'home-index'})
+      } else {
+        errorMessage.value = data.message
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
 </script>
 
 <template>

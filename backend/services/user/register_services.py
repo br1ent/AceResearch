@@ -28,10 +28,12 @@ class RegisterServices:
                 "message": "该用户名已被占用!"
             }
 
+
         user = User(
             username=form.username,
             email=form.email,
             password_hash=hash_password(form.password),
+            photo="/static/avatars/default.png",
         )
         self.db.add(user)
         self.db.commit()

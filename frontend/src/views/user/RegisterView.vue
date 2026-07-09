@@ -10,6 +10,49 @@ const confirmPassword = ref("");
 const errorMessage = ref("");
 
 const router = useRouter();
+
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+async function handleRegister() {
+  errorMessage.value = ""
+
+  if (!username.value) {
+    errorMessage.value = "用户名不能为空!"
+  } else if (username.value.length > 20) {
+    errorMessage.value = "用户名不能超过20个字符!"
+  } else if (!email.value) {
+    errorMessage.value = "邮箱不能为空!"
+  } else if (!EMAIL_RE.test(email.value)) {
+    errorMessage.value = "邮箱格式不正确!"
+  } else if (!password.value) {
+    errorMessage.value = "密码不能为空!"
+  } else if (password.value.length < 6) {
+    errorMessage.value = "密码不能少于6位!"
+  } else if (confirmPassword.value !== password.value) {
+    errorMessage.value = "两次密码不一致!"
+  } else {
+    try {
+      const res = await http.post("/api/user/register", {
+        username: username.value,
+        email: email.value,
+        password: password.value,
+        confirm_password: confirmPassword.value
+      })
+
+      const data = res.data
+      if (data.success) {
+        await router.push({
+          name: "user-login-index"
+        })
+      } else {
+        errorMessage.value = data.message
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+}
+
 </script>
 
 <template>
