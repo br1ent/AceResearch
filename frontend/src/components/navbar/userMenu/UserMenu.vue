@@ -1,11 +1,32 @@
 <script setup>
 import {useUserStore} from "@/stores/user.js";
+import http from "@/js/http/api.js";
+import {useRouter} from "vue-router";
 
 const user = useUserStore()
+const router = useRouter()
 
 function closeMenu() {
   const element = document.activeElement
   if (element && element instanceof HTMLElement) element.blur()
+}
+
+async function handleLogout() {
+  try {
+    const res = await http.post("/api/user/logout")
+
+    const data = res.data
+    if (data.success) {
+      user.logout()
+      await router.push({
+        name: 'user-login-index'
+      })
+    } else {
+      alert("服务器异常，请稍后重试!")
+    }
+  } catch (e) {
+    console.error(e)
+  }
 }
 </script>
 
@@ -41,7 +62,7 @@ function closeMenu() {
       </li>
       <li></li>
       <li>
-        <a class="text-error font-bold text-sm">退出登录</a>
+        <a class="text-error font-bold text-sm" @click="handleLogout">退出登录</a>
       </li>
     </ul>
   </div>
