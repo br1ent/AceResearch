@@ -1,14 +1,14 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import http, { setAccessToken, getAccessToken } from '@/js/http/api.js'
 
 export const useUserStore = defineStore('user', () => {
   const id = ref(0)
   const username = ref("")
   const email = ref("")
   const photo = ref("")
-  const accessToken = ref("")
   const hasPullUserInfo = ref(false)
-
+  const accessToken = ref("")
 
   function isLogin() {
     return !!accessToken.value
@@ -21,8 +21,8 @@ export const useUserStore = defineStore('user', () => {
   function setUserInfo(data) {
     id.value = data.id
     username.value = data.username
-    photo.value = data.photo
     email.value = data.email
+    photo.value = data.photo
   }
 
   function setHasPullUserInfo(newStatus) {
@@ -32,21 +32,22 @@ export const useUserStore = defineStore('user', () => {
   function logout() {
     id.value = 0
     username.value = ""
-    photo.value = ""
     email.value = ""
+    photo.value = ""
     accessToken.value = ""
   }
 
   return {
     id,
+    email,
     username,
     photo,
-    email,
     accessToken,
-    isLogin,
-    setAccessToken,
+    hasPullUserInfo,
     setUserInfo,
+    setAccessToken,
+    setHasPullUserInfo,
     logout,
-    setHasPullUserInfo
+    isLogin
   }
 })

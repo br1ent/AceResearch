@@ -1,16 +1,14 @@
 <script setup>
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/user.js";
 
-import {ref} from "vue";
+const email = ref("");
+const password = ref("");
+const errorMessage = ref("");
 
-const email = ref("")
-const password = ref("")
-const errorMessage = ref("")
-
-function handleLogin() {
-  errorMessage.value = ""
-
-  console.log("login")
-}
+const router = useRouter();
+const userStore = useUserStore();
 </script>
 
 <template>
@@ -27,17 +25,17 @@ function handleLogin() {
           <input type="password" class="input input-bordered w-full" v-model="password" />
         </div>
 
-        <div v-if="errorMessage" class="text-error text-base">
-          {{errorMessage}}
+        <div v-if="errorMessage" class="text-error text-sm mb-2">
+          {{ errorMessage }}
         </div>
 
         <button class="btn btn-neutral w-full">登录</button>
         <p class="text-center text-sm mt-3 text-base-content/60">
           没有账号？
-          <router-link :to="{name: 'user-register-index'}" class="link link-neutral link-hover">注册</router-link>
+          <router-link :to="{ name: 'user-register-index' }" class="link link-neutral link-hover">注册</router-link>
         </p>
         <p class="text-center text-sm text-base-content/60">
-          <router-link :to="{name: 'user-resetpwd-index'}" class="link link-neutral link-hover">忘记密码？</router-link>
+          <router-link :to="{ name: 'user-resetpwd-index' }" class="link link-neutral link-hover">忘记密码？</router-link>
         </p>
       </div>
     </form>

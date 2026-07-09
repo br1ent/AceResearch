@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from config.settings import get_settings
 from config.database import engine, Base
 from routers.user import router as user_router
@@ -12,15 +13,10 @@ app = FastAPI(
 )
 
 app.include_router(user_router)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.on_event("startup")
 def startup():
     """启动时初始化数据库表"""
     Base.metadata.create_all(bind=engine)
-
-
-@app.get("/health")
-def health_check():
-    """健康检查接口"""
-    return {"status": "ok"}
