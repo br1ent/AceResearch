@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from config.settings import get_settings
 from config.database import engine, Base
@@ -18,8 +21,20 @@ app.include_router(user_router)
 # 后端静态文件（头像等）
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# 前端 SPA（未匹配的路由全部回退到 index.html）
-app.mount("/", StaticFiles(directory="../frontend/dist", html=True), name="frontend")
+# 前端构建产物
+FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+
+# SPA 兜底：所有未匹配的路径都返回 index.html（Vue Router 接管）
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    return FileResponse(str(FRONTEND_DIST / "index.html"))
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse(str(FRONTEND_DIST / "favicon.ico"))
 
 
 @app.on_event("startup")
