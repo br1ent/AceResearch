@@ -29,6 +29,27 @@ export const useUserStore = defineStore('user', () => {
     hasPullUserInfo.value = newStatus
   }
 
+  async function initAuth() {
+    // 1. 用 refresh_token cookie 换取新的 access_token
+    const refreshRes = await http.post('/api/user/refresh').catch(() => null)
+    if (!refreshRes || !refreshRes.data?.success) {
+      return false
+    }
+
+    const newToken = refreshRes.data.data.access_token
+    setAccessToken(newToken)
+    setApiToken(newToken)
+
+    // 2. 用 access_token 获取用户信息
+    const meRes = await http.get('/api/user/me').catch(() => null)
+    if (meRes?.data?.success) {
+      setUserInfo(meRes.data.data)
+      setHasPullUserInfo(true)
+    }
+
+    return true
+  }
+
   function logout() {
     id.value = 0
     username.value = ""
@@ -49,5 +70,6 @@ export const useUserStore = defineStore('user', () => {
     setHasPullUserInfo,
     logout,
     isLogin,
+    initAuth,
   }
 })

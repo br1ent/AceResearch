@@ -1,13 +1,8 @@
-from sqlalchemy.orm.session import Session
-
 from models.user import User
+from schemas.user.get_user_info import GetUserInfoOut
 
 
 class GetUserInfoServices:
-    def __init__(self, db: Session):
-        self.db = db
-
-
-    def get_user_info(self):
-        user = self.db.query(User).filter().first()
-
+    def get_user_info(self, user: User) -> dict:
+        user_out = GetUserInfoOut.model_validate(user)
+        return {"success": True, "data": user_out.model_dump()}
