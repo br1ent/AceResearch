@@ -10,8 +10,18 @@ export const useUserStore = defineStore('user', () => {
   const hasPullUserInfo = ref(false)
   const accessToken = ref("")
 
+  const _authInitialized = ref(false)
+  let _initPromise = null
+
   function isLogin() {
     return !!accessToken.value
+  }
+
+  /** 等待 auth 初始化完成 */
+  function waitForAuth() {
+    if (_authInitialized.value) return Promise.resolve()
+    if (_initPromise) return _initPromise
+    return Promise.resolve()
   }
 
   function setAccessToken(token) {
@@ -30,24 +40,32 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function initAuth() {
-    // 1. 用 refresh_token cookie 换取新的 access_token
-    const refreshRes = await http.post('/api/user/refresh').catch(() => null)
-    if (!refreshRes || !refreshRes.data?.success) {
-      return false
-    }
+    if (_initPromise) return await _initPromise
 
-    const newToken = refreshRes.data.data.access_token
-    setAccessToken(newToken)
-    setApiToken(newToken)
+    _initPromise = (async () => {
+      // 1. 用 refresh_token cookie 换取新的 access_token
+      const refreshRes = await http.post('/api/user/refresh').catch(() => null)
+      if (!refreshRes || !refreshRes.data?.success) {
+        return false
+      }
 
-    // 2. 用 access_token 获取用户信息
-    const meRes = await http.get('/api/user/me').catch(() => null)
-    if (meRes?.data?.success) {
-      setUserInfo(meRes.data.data)
-      setHasPullUserInfo(true)
-    }
+      const newToken = refreshRes.data.data.access_token
+      setAccessToken(newToken)
+      setApiToken(newToken)
 
-    return true
+      // 2. 用 access_token 获取用户信息
+      const meRes = await http.get('/api/user/me').catch(() => null)
+      if (meRes?.data?.success) {
+        setUserInfo(meRes.data.data)
+        setHasPullUserInfo(true)
+      }
+
+      return true
+    })()
+
+    const result = await _initPromise
+    _authInitialized.value = true
+    return result
   }
 
   function logout() {
@@ -71,5 +89,6 @@ export const useUserStore = defineStore('user', () => {
     logout,
     isLogin,
     initAuth,
+    waitForAuth,
   }
 })

@@ -1,14 +1,10 @@
 <script setup>
-import { onMounted } from 'vue'
 import NavBar from './components/navbar/NavBar.vue'
 import { useUserStore } from '@/stores/user.js'
 
+// 立即触发 auth 初始化，不阻塞渲染
 const userStore = useUserStore()
-
-onMounted(async () => {
-  // 首次访问，尝试用 refresh_token 恢复登录态
-  await userStore.initAuth()
-})
+userStore.initAuth()
 </script>
 
 <template>
