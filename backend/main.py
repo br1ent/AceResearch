@@ -18,8 +18,8 @@ app = FastAPI(
 # API 路由
 app.include_router(user_router)
 
-# 后端静态文件（头像等）
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 媒体文件（头像等）
+app.mount("/media", StaticFiles(directory="media"), name="media")
 
 # 前端构建产物
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
