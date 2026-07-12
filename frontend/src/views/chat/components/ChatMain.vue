@@ -99,6 +99,28 @@ function formatTime(isoStr) {
             <br><br>
             <span class="text-base-content/70">{{ msg.content }}</span>
           </p>
+          <!-- 研究方案（带确认按钮） -->
+          <template v-else-if="msg.msg_type === 'plan_ready' && msg.plan">
+            <p class="text-sm font-semibold mb-2">📋 研究方案</p>
+            <div class="text-sm text-base-content/80 space-y-2">
+              <div v-if="msg.plan.outline && msg.plan.outline.length">
+                <p class="font-medium text-xs text-base-content/50 mb-1">大纲</p>
+                <p v-for="(item, j) in msg.plan.outline" :key="j" class="whitespace-pre-wrap">- {{ item }}</p>
+              </div>
+              <div v-if="msg.plan.subtasks && msg.plan.subtasks.length">
+                <p class="font-medium text-xs text-base-content/50 mt-2 mb-1">研究子任务</p>
+                <p v-for="(t, j) in msg.plan.subtasks" :key="j" class="whitespace-pre-wrap">{{ j + 1 }}. <strong>{{ t.title }}</strong> — {{ t.description }}</p>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button class="btn btn-sm btn-primary" @click="chatStore.confirmResearch()" :disabled="chatStore.isResearching">
+                确认并开始研究
+              </button>
+              <button class="btn btn-sm btn-ghost" disabled>
+                修改方向（输入新消息修改）
+              </button>
+            </div>
+          </template>
           <p v-else class="text-sm whitespace-pre-wrap">{{ msg.content }}</p>
           <p class="text-xs mt-1 text-base-content/40 text-right">{{ formatTime(msg.created_at) }}</p>
         </div>

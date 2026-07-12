@@ -13,6 +13,7 @@ export const useChatStore = defineStore('chat', () => {
   const researchProgress = ref(0)
   const researchMessage = ref('')
   const isChatting = ref(false)
+  const planReportId = ref(null)  // 当前待确认的研究方案
 
   // ---- 模式切换 ----
   function switchMode(newMode) {
@@ -75,6 +76,11 @@ export const useChatStore = defineStore('chat', () => {
           case 'error':
             isResearching.value = false
             addMessage({ id: Date.now(), role: 'assistant', content: `❌ ${data.message || '研究过程发生错误'}`, msg_type: 'error', created_at: new Date().toISOString() })
+            break
+          case 'plan_ready':
+            isResearching.value = false
+            planReportId.value = data.report_id
+            addMessage({ id: Date.now(), role: 'assistant', content: '', msg_type: 'plan_ready', created_at: new Date().toISOString(), plan: { report_id: data.report_id, outline: data.outline, subtasks: data.subtasks } })
             break
           case 'pong': break
         }
@@ -200,9 +206,29 @@ export const useChatStore = defineStore('chat', () => {
     if (conv.mode === 'research') connectWebSocket(conv.id)
   }
 
+  // ---- 确认研究方案 -------
+  async function confirmResearch() {
+    const rid = planReportId.value
+    const cid = currentConvId.value
+    if (!rid || !cid) return
+    planReportId.value = null
+    isResearching.value = true
+    researchProgress.value = 25
+    researchMessage.value = '正在搜索资料...'
+    addMessage({ id: Date.now(), role: 'user', content: '✅ 确认方案，开始研究', msg_type: 'text', created_at: new Date().toISOString() })
+    addMessage({ id: Date.now() + 1, role: 'assistant', content: '🔍 正在搜索资料...', msg_type: 'agent_status', created_at: new Date().toISOString() })
+    try {
+      await http.post('/api/chat/research/confirm', { conversation_id: cid, report_id: rid })
+    } catch (e) {
+      console.error('确认失败', e)
+      isResearching.value = false
+    }
+  }
+
   return {
     conversations, currentConvId, messages, mode, switchMode,
     isResearching, researchProgress, researchMessage, isChatting, wsConnected,
+    planReportId, confirmResearch,
     fetchConversations, createConversation, fetchMessages, addMessage,
     sendMessage, selectConversation, connectWebSocket, disconnectWebSocket,
   }
