@@ -1,45 +1,84 @@
 <script setup>
-import { ref } from 'vue'
-import { Send } from '@lucide/vue'
+import { ref, onUnmounted } from 'vue'
+import { Send, Loader2, BookOpen, MessageCircle } from '@lucide/vue'
 import { useUserStore } from '@/stores/user.js'
+import { useChatStore } from '@/stores/chat.js'
 import AvatarBox from './AvatarBox.vue'
 
 const userStore = useUserStore()
+const chatStore = useChatStore()
+
 const inputText = ref('')
-const messages = ref([])
 
-function sendMessage() {
+onUnmounted(() => {
+  chatStore.disconnectWebSocket()
+})
+
+async function sendMessage() {
   const text = inputText.value.trim()
-  if (!text) return
-
-  messages.value.push({
-    role: 'user',
-    content: text,
-    time: new Date().toLocaleTimeString(),
-  })
+  if (!text || chatStore.isResearching || chatStore.isChatting) return
 
   inputText.value = ''
+  await chatStore.sendMessage(text)
+}
 
-  // TODO: 调用后端 API 获取 AI 回复
+function formatTime(isoStr) {
+  if (!isoStr) return ''
+  const d = new Date(isoStr)
+  return d.toLocaleTimeString()
 }
 </script>
 
 <template>
   <div class="flex flex-col h-full">
+    <!-- 模式切换条 -->
+    <div class="flex items-center justify-center gap-2 px-4 py-2 border-b border-base-200 bg-base-100/80">
+      <button
+        class="btn btn-sm gap-1.5"
+        :class="chatStore.mode === 'chat' ? 'btn-primary' : 'btn-ghost'"
+        @click="chatStore.switchMode('chat')"
+        :disabled="chatStore.isResearching || chatStore.isChatting"
+      >
+        <MessageCircle class="w-4 h-4" />
+        闲聊模式
+      </button>
+      <button
+        class="btn btn-sm gap-1.5"
+        :class="chatStore.mode === 'research' ? 'btn-primary' : 'btn-ghost'"
+        @click="chatStore.switchMode('research')"
+        :disabled="chatStore.isResearching || chatStore.isChatting"
+      >
+        <BookOpen class="w-4 h-4" />
+        研究模式
+      </button>
+    </div>
+
     <!-- 欢迎区域 -->
-    <div v-if="messages.length === 0" class="flex-1 flex flex-col items-center justify-center px-6">
-      <h2 class="text-2xl font-bold mb-2">
-        {{ userStore.username }}，今天想研究些什么领域？
-      </h2>
-      <p class="text-base-content/50 text-center max-w-md">
-        请输入一个研究主题，我将为你规划研究任务、搜索资料并生成报告
-      </p>
+    <div v-if="chatStore.messages.length === 0" class="flex-1 flex flex-col items-center justify-center px-6">
+      <!-- 研究模式 -->
+      <template v-if="chatStore.mode === 'research'">
+        <h2 class="text-2xl font-bold mb-2">
+          {{ userStore.username }}，今天想研究些什么领域？
+        </h2>
+        <p class="text-base-content/50 text-center max-w-md">
+          请输入一个研究主题，我将为你规划研究任务、搜索资料并生成报告
+        </p>
+      </template>
+      <!-- 闲聊模式 -->
+      <template v-else>
+        <h2 class="text-2xl font-bold mb-2">
+          👋 {{ userStore.username }}，有什么想聊的？
+        </h2>
+        <p class="text-base-content/50 text-center max-w-md">
+          直接和我对话吧！需要深度研究时可以随时切换到研究模式
+        </p>
+      </template>
     </div>
 
     <!-- 消息列表 -->
     <div v-else class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
       <div
-        v-for="(msg, i) in messages"
+        v-for="(msg, i) in chatStore.messages"
         :key="i"
         class="flex gap-3 items-start"
         :class="msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'"
@@ -48,10 +87,45 @@ function sendMessage() {
 
         <div
           class="max-w-[70%] rounded-2xl px-4 py-2.5"
-          :class="msg.role === 'user' ? 'bg-success/20 rounded-tr-md' : 'bg-base-200 rounded-tl-md'"
+          :class="{
+            'bg-success/20 rounded-tr-md': msg.role === 'user',
+            'bg-base-200 rounded-tl-md': msg.role !== 'user',
+            'border border-info/30 bg-info/5': msg.msg_type === 'agent_status',
+            'border border-warning/30 bg-warning/5': msg.msg_type === 'error',
+          }"
         >
-          <p class="text-sm whitespace-pre-wrap">{{ msg.content }}</p>
-          <p class="text-xs mt-1 text-base-content/40 text-right">{{ msg.time }}</p>
+          <p class="text-sm whitespace-pre-wrap" v-if="msg.msg_type === 'report'">
+            📄 <strong>研究报告已生成</strong>
+            <br><br>
+            <span class="text-base-content/70">{{ msg.content }}</span>
+          </p>
+          <p v-else class="text-sm whitespace-pre-wrap">{{ msg.content }}</p>
+          <p class="text-xs mt-1 text-base-content/40 text-right">{{ formatTime(msg.created_at) }}</p>
+        </div>
+      </div>
+
+      <!-- 研究中的进度 -->
+      <div v-if="chatStore.isResearching" class="flex gap-3 items-start">
+        <AvatarBox role="assistant" />
+        <div class="bg-base-200 rounded-2xl rounded-tl-md px-4 py-2.5 max-w-[70%] min-w-[200px]">
+          <div class="flex items-center gap-2">
+            <Loader2 class="w-4 h-4 animate-spin text-info" />
+            <span class="text-sm text-base-content/70">{{ chatStore.researchMessage || '处理中...' }}</span>
+          </div>
+          <div class="w-full bg-base-300 rounded-full h-1.5 mt-2">
+            <div class="bg-info h-1.5 rounded-full transition-all duration-500" :style="{ width: chatStore.researchProgress + '%' }"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 闲聊中的等待 -->
+      <div v-if="chatStore.isChatting" class="flex gap-3 items-start">
+        <AvatarBox role="assistant" />
+        <div class="bg-base-200 rounded-2xl rounded-tl-md px-4 py-2.5">
+          <div class="flex items-center gap-2">
+            <Loader2 class="w-4 h-4 animate-spin text-info" />
+            <span class="text-sm text-base-content/70">思考中...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -59,16 +133,21 @@ function sendMessage() {
     <!-- 输入区域 -->
     <div class="border-t border-base-200 p-4">
       <div class="max-w-4xl mx-auto flex gap-2">
-        <input
-          v-model="inputText"
-          type="text"
-          class="input input-bordered flex-1 rounded-full"
-          placeholder="输入研究主题..."
-          @keydown.enter="sendMessage"
-        />
+        <div class="flex-1 relative">
+          <input
+            v-model="inputText"
+            type="text"
+            class="input input-bordered w-full rounded-full pl-4 pr-12"
+            :placeholder="chatStore.mode === 'research'
+              ? (chatStore.isResearching ? '研究进行中...' : '输入研究主题...')
+              : (chatStore.isChatting ? '等待回复...' : '输入消息...')"
+            :disabled="chatStore.isResearching || chatStore.isChatting"
+            @keydown.enter="sendMessage"
+          />
+        </div>
         <button
-          class="btn btn-neutral btn-circle"
-          :disabled="!inputText.trim()"
+          class="btn btn-neutral btn-circle shrink-0"
+          :disabled="!inputText.trim() || chatStore.isResearching || chatStore.isChatting"
           @click="sendMessage"
         >
           <Send class="w-4 h-4" />
