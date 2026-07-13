@@ -16,6 +16,10 @@ onMounted(async () => {
   loading.value = true
   await chatStore.fetchConversations()
   loading.value = false
+  // 自动选中第一条
+  if (chatStore.conversations.length > 0 && !chatStore.currentConvId) {
+    selectChat(chatStore.conversations[0])
+  }
 })
 
 function selectChat(conv) {

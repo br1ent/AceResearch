@@ -46,15 +46,33 @@ export const useChatStore = defineStore('chat', () => {
   async function fetchMessages(convId) {
     if (convId == null || convId === undefined) return
     try {
-      const res = await http.get(`/api/chat/conversations/${convId}/messages`)
+      const res = await http.get(`/api/chat/conversations/${convId}/messages`, { params: { limit: 30 } })
       if (res.data?.success) {
         messages.value = res.data.data
         currentConvId.value = convId
+        hasMore.value = res.data.data.length >= 30
       }
     } catch (e) { console.error('获取消息失败', e) }
   }
 
   function addMessage(msg) { messages.value.push(msg) }
+
+  const hasMore = ref(false)
+  const isLoadingMore = ref(false)
+
+  async function loadMore() {
+    if (!hasMore.value || isLoadingMore.value || !currentConvId.value) return
+    isLoadingMore.value = true
+    try {
+      const offset = messages.value.length
+      const res = await http.get(`/api/chat/conversations/${currentConvId.value}/messages`, { params: { offset, limit: 30 } })
+      if (res.data?.success && res.data.data.length > 0) {
+        messages.value = [...res.data.data, ...messages.value]
+        hasMore.value = res.data.data.length >= 30
+      } else { hasMore.value = false }
+    } catch (e) { console.error('加载更多消息失败', e) }
+    finally { isLoadingMore.value = false }
+  }
 
   // ---- WebSocket ----
   function connectWebSocket(convId) {
@@ -254,6 +272,6 @@ export const useChatStore = defineStore('chat', () => {
     planReportId, confirmResearch,
     fetchConversations, createConversation, fetchMessages, addMessage,
     sendMessage, selectConversation, connectWebSocket, disconnectWebSocket,
-    deleteConversation,
+    deleteConversation, loadMore,
   }
 })

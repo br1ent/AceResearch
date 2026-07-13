@@ -40,17 +40,19 @@ def list_conversations(
 
 
 @router.get("/conversations/{conv_id}/messages")
-def get_messages(
+def get_messages_api(
     conv_id: int,
+    offset: int = 0,
+    limit: int = 30,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """获取对话消息历史"""
+    """获取对话消息历史（默认最近 30 条，支持分页）"""
     service = ConversationService(db)
     conv = service.get_by_id(conv_id, current_user.id)
     if not conv:
         raise HTTPException(status_code=404, detail="对话不存在")
-    msgs = service.get_messages(conv_id)
+    msgs = service.get_messages(conv_id, limit=limit, offset=offset)
     return {"success": True, "data": [MessageOut.model_validate(m) for m in msgs]}
 
 

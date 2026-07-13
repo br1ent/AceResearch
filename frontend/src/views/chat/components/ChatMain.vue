@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { Send, Loader2, BookOpen, MessageCircle } from '@lucide/vue'
 import { useUserStore } from '@/stores/user.js'
 import { useChatStore } from '@/stores/chat.js'
@@ -9,6 +9,14 @@ const userStore = useUserStore()
 const chatStore = useChatStore()
 
 const inputText = ref('')
+
+// 闲聊模式只显示文本消息；研究模式显示全部
+const visibleMessages = computed(() => {
+  if (chatStore.mode === 'chat') {
+    return chatStore.messages.filter(m => m.msg_type === 'text' || m.msg_type === 'report')
+  }
+  return chatStore.messages
+})
 
 onUnmounted(() => {
   chatStore.disconnectWebSocket()
@@ -54,7 +62,7 @@ function formatTime(isoStr) {
     </div>
 
     <!-- 欢迎区域 -->
-    <div v-if="chatStore.messages.length === 0" class="flex-1 flex flex-col items-center justify-center px-6">
+    <div v-if="visibleMessages.length === 0" class="flex-1 flex flex-col items-center justify-center px-6">
       <!-- 研究模式 -->
       <template v-if="chatStore.mode === 'research'">
         <h2 class="text-2xl font-bold mb-2">
@@ -77,8 +85,15 @@ function formatTime(isoStr) {
 
     <!-- 消息列表 -->
     <div v-else class="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <!-- 加载更早消息 -->
+      <div v-if="chatStore.hasMore" class="flex justify-center">
+        <button class="btn btn-ghost btn-sm text-base-content/50" @click="chatStore.loadMore()" :disabled="chatStore.isLoadingMore">
+          <Loader2 v-if="chatStore.isLoadingMore" class="w-4 h-4 animate-spin" />
+          <span v-else>加载更早的消息</span>
+        </button>
+      </div>
       <div
-        v-for="(msg, i) in chatStore.messages"
+        v-for="(msg, i) in visibleMessages"
         :key="i"
         class="flex gap-3 items-start"
         :class="msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'"

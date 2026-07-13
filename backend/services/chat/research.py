@@ -136,7 +136,7 @@ class ResearchService:
 
             await agent_broadcast("analyst", "正在分析搜索结果", f"共 {len(state['search_results'])} 条结果，提炼关键发现...")
             from agents.nodes.analyst import analyst_node
-            state.update(await analyst_node(state))
+            state.update(analyst_node(state))
 
             await agent_broadcast("writer", "正在撰写研究报告", "根据大纲和分析结果生成报告...")
             from agents.nodes.writer import writer_node

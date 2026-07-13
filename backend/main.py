@@ -8,6 +8,7 @@ from config.database import engine, Base, SessionLocal
 from routers.chat import router as chat_router
 from routers.chat.reports import router as reports_router
 from routers.user import router as user_router
+from routers.prompts import router as prompts_router
 from websocket import manager as ws_manager
 from utils.auth import decode_token
 
@@ -23,6 +24,7 @@ app = FastAPI(
 app.include_router(user_router)
 app.include_router(chat_router)
 app.include_router(reports_router)
+app.include_router(prompts_router)
 
 # 媒体文件（头像等）
 app.mount("/media", StaticFiles(directory="media"), name="media")
@@ -84,14 +86,6 @@ async def favicon():
 
 @app.on_event("startup")
 def startup():
-    """启动时初始化数据库表并填充默认提示词"""
-    import models  # noqa: F401  确保所有模型被加载
+    """启动时初始化数据库表"""
+    import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
-
-    from config.database import SessionLocal
-    from models.agent_prompt import seed_default_prompts
-    db = SessionLocal()
-    try:
-        seed_default_prompts(db)
-    finally:
-        db.close()

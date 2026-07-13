@@ -40,14 +40,15 @@ class ConversationService:
             .first()
         )
 
-    def get_messages(self, conv_id: int, limit: int = 100) -> list[Message]:
+    def get_messages(self, conv_id: int, limit: int = 30, offset: int = 0) -> list[Message]:
         return (
             self.db.query(Message)
             .filter(Message.conversation_id == conv_id)
-            .order_by(Message.create_at)
+            .order_by(Message.create_at.desc())
+            .offset(offset)
             .limit(limit)
             .all()
-        )
+        )[::-1]  # 反转回正序
 
     def add_message(
         self,
