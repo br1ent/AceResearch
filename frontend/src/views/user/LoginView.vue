@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user.js";
-import http from "@/js/http/api.js";
+import http, { setAccessToken as setApiToken } from "@/js/http/api.js";
 
 const email = ref("");
 const password = ref("");
@@ -32,6 +32,7 @@ async function handleLogin() {
       const data = res.data
       if (data.success) {
         user.setAccessToken(data.data.access_token)
+        setApiToken(data.data.access_token)
         user.setUserInfo(data.data.user)
 
         await router.push({name: 'home-index'})

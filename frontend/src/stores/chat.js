@@ -266,12 +266,21 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  function resetStore() {
+    conversations.value = []
+    currentConvId.value = null
+    messages.value = []
+    disconnectWebSocket()
+    isResearching.value = false
+    isChatting.value = false
+  }
+
   return {
     conversations, currentConvId, messages, mode, switchMode,
     isResearching, researchProgress, researchMessage, isChatting, wsConnected,
     planReportId, confirmResearch,
     fetchConversations, createConversation, fetchMessages, addMessage,
     sendMessage, selectConversation, connectWebSocket, disconnectWebSocket,
-    deleteConversation, loadMore,
+    deleteConversation, loadMore, resetStore,
   }
 })

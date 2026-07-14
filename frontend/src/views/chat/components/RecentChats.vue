@@ -1,9 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Trash2, Loader2, BookOpen, MessageCircle as ChatIcon } from '@lucide/vue'
 import { useChatStore } from '@/stores/chat.js'
 
 const chatStore = useChatStore()
+const route = useRoute()
 
 const loading = ref(true)
 const showDeleteModal = ref(false)
@@ -12,14 +14,18 @@ const isDeleting = ref(false)
 
 const emit = defineEmits(['selectChat'])
 
-onMounted(async () => {
+async function loadConversations() {
   loading.value = true
   await chatStore.fetchConversations()
   loading.value = false
-  // 自动选中第一条
   if (chatStore.conversations.length > 0 && !chatStore.currentConvId) {
     selectChat(chatStore.conversations[0])
   }
+}
+
+onMounted(loadConversations)
+watch(() => route.path, (to, from) => {
+  if (to === '/chat' && from !== '/chat') loadConversations()
 })
 
 function selectChat(conv) {

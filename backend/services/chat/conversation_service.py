@@ -40,15 +40,11 @@ class ConversationService:
             .first()
         )
 
-    def get_messages(self, conv_id: int, limit: int = 30, offset: int = 0) -> list[Message]:
-        return (
-            self.db.query(Message)
-            .filter(Message.conversation_id == conv_id)
-            .order_by(Message.create_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )[::-1]  # 反转回正序
+    def get_messages(self, conv_id: int, user_id: int = 0, limit: int = 30, offset: int = 0) -> list[Message]:
+        q = self.db.query(Message).filter(Message.conversation_id == conv_id)
+        if user_id:
+            q = q.filter(Message.user_id == user_id)
+        return q.order_by(Message.create_at.desc()).offset(offset).limit(limit).all()[::-1]
 
     def add_message(
         self,
@@ -58,12 +54,13 @@ class ConversationService:
         msg_type: str = "text",
         metadata_json: str | None = None,
     ) -> Message:
+        conv = self.db.query(Conversation).filter(Conversation.id == conv_id).first()
+        uid = conv.user_id if conv else 0
         msg = Message(
-            conversation_id=conv_id, role=role, content=content,
+            conversation_id=conv_id, user_id=uid, role=role, content=content,
             msg_type=msg_type, metadata_json=metadata_json,
         )
         self.db.add(msg)
-        conv = self.db.query(Conversation).filter(Conversation.id == conv_id).first()
         if conv:
             conv.update_at = datetime.datetime.now()
         self.db.commit()

@@ -61,6 +61,8 @@ class ChatService:
                 messages.append(HumanMessage(content=msg.content))
             elif msg.role == "assistant":
                 messages.append(AIMessage(content=msg.content))
+        # 加上当前用户消息
+        messages.append(HumanMessage(content=user_message))
 
         full_reply = ""
         async for chunk in stream_llm.astream(messages):

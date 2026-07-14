@@ -30,6 +30,9 @@ class Message(Base):
     conversation_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, comment="所属对话ID"
     )
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, comment="所属用户ID"
+    )
     role: Mapped[str] = mapped_column(String(20), nullable=False, comment="角色: user / assistant / system")
     content: Mapped[str] = mapped_column(Text, nullable=False, comment="消息内容")
     msg_type: Mapped[str] = mapped_column(
@@ -39,4 +42,4 @@ class Message(Base):
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True, comment="附加元数据(JSON)")
 
     def __repr__(self) -> str:
-        return f"<Message {self.id} conv={self.conversation_id} role={self.role}>"
+        return f"<Message {self.id} conv={self.conversation_id} user={self.user_id} role={self.role}>"

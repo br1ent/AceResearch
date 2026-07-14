@@ -1,10 +1,12 @@
 <script setup>
 import { useUserStore } from "@/stores/user.js";
+import { useChatStore } from "@/stores/chat.js";
 import http from "@/js/http/api.js";
 import { useRouter } from "vue-router";
 import { User, FileText, LogOut } from '@lucide/vue';
 
 const user = useUserStore();
+const chat = useChatStore();
 const router = useRouter();
 
 function closeMenu() {
@@ -17,6 +19,7 @@ async function handleLogout() {
     const res = await http.post("/api/user/logout");
     if (res.data.success) {
       user.logout();
+      chat.resetStore();
       await router.push({ name: "user-login-index" });
     } else {
       alert("服务器异常，请稍后重试!");

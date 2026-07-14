@@ -80,6 +80,8 @@ export const useUserStore = defineStore('user', () => {
     createAt.value = ""
     updateAt.value = ""
     accessToken.value = ""
+    _authInitialized.value = false
+    _initPromise = null
   }
 
   return {

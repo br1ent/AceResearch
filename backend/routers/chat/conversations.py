@@ -52,7 +52,7 @@ def get_messages_api(
     conv = service.get_by_id(conv_id, current_user.id)
     if not conv:
         raise HTTPException(status_code=404, detail="对话不存在")
-    msgs = service.get_messages(conv_id, limit=limit, offset=offset)
+    msgs = service.get_messages(conv_id, user_id=current_user.id, limit=limit, offset=offset)
     return {"success": True, "data": [MessageOut.model_validate(m) for m in msgs]}
 
 
