@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { X, GripVertical } from '@lucide/vue'
+import { X, GripVertical, FileText, Search as SearchIcon, CheckCircle, Edit3 } from '@lucide/vue'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
@@ -84,7 +84,7 @@ const planMd = computed(() => {
 
     <!-- 标题 -->
     <div class="flex items-center justify-between px-4 py-3 border-b border-base-200 shrink-0">
-      <span class="font-semibold text-sm">📋 研究方案</span>
+      <span class="font-semibold text-sm flex items-center gap-1.5"><FileText class="w-4 h-4" /> 研究方案</span>
       <button class="btn btn-ghost btn-xs btn-circle" @click="emit('close')">
         <X class="w-4 h-4" />
       </button>

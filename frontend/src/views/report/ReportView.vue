@@ -158,7 +158,7 @@ function statusBadge(status) {
         <div class="overflow-y-auto px-6 py-5" style="flex: 1; min-height: 0;">
           <div class="prose prose-sm max-w-none leading-relaxed break-words" v-html="marked(currentReport.content)"></div>
           <div v-if="currentReport.sources && currentReport.sources.length" class="mt-6 pt-4 border-t border-base-200">
-            <h3 class="text-sm font-semibold mb-2">📚 参考资料</h3>
+            <h3 class="text-sm font-semibold mb-2 flex items-center gap-1.5"><BookOpen class="w-4 h-4" /> 参考资料</h3>
             <div v-for="s in currentReport.sources" :key="s.index" class="text-xs text-base-content/60 py-1 flex items-start gap-2">
               <span class="shrink-0">[{{ s.index }}]</span>
               <a :href="s.url" target="_blank" rel="noopener" class="link link-info break-all">{{ s.title }}</a>

@@ -99,7 +99,9 @@ export const useChatStore = defineStore('chat', () => {
             researchProgress.value = data.progress || researchProgress.value
             break
           case 'report_completed':
-            isResearching.value = false; researchProgress.value = 100; researchMessage.value = '报告已生成完成'; break
+            isResearching.value = false; researchProgress.value = 100; researchMessage.value = '报告已生成完成'
+            addMessage({ id: Date.now(), role: 'assistant', content: data.summary || '📄 研究报告已生成', msg_type: 'report', created_at: new Date().toISOString(), metadata_json: JSON.stringify({ report_id: data.report_id }) })
+            break
           case 'error':
             isResearching.value = false
             addMessage({ id: Date.now(), role: 'assistant', content: `❌ ${data.message || '研究过程发生错误'}`, msg_type: 'error', created_at: new Date().toISOString() })

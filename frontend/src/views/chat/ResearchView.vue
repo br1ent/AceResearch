@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { PanelLeft, PanelLeftClose, MessageSquarePlus, Search } from '@lucide/vue'
+import { PanelLeft, PanelLeftClose, MessageSquarePlus, Search, FileText } from '@lucide/vue'
 import SidebarTool from './components/SidebarTool.vue'
 import RecentChats from './components/RecentChats.vue'
 import ChatMain from './components/ChatMain.vue'
@@ -117,7 +117,7 @@ watch(() => chatStore.currentPlan, (val) => {
       class="btn btn-neutral btn-sm fixed right-4 bottom-24 z-40 shadow-lg gap-1.5"
       @click="chatStore.openPlanPanel()"
     >
-      📋 查看方案
+      <FileText class="w-4 h-4" /> 查看方案
     </button>
   </div>
 </template>
