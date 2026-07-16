@@ -19,7 +19,7 @@ llm = ChatOpenAI(
 )
 
 
-def planner_node(state: ResearchState) -> dict:
+async def planner_node(state: ResearchState) -> dict:
     """规划节点：生成大纲和子任务"""
     system_prompt = get_research_prompt("planner")
     prompt = ChatPromptTemplate.from_messages([
@@ -28,7 +28,7 @@ def planner_node(state: ResearchState) -> dict:
     ])
 
     chain = prompt | llm
-    response = chain.invoke({"topic": state["topic"]})
+    response = await chain.ainvoke({"topic": state["topic"]})
 
     text = response.content.strip()
     if text.startswith("```"):

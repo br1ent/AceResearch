@@ -17,7 +17,7 @@ llm = ChatOpenAI(
 )
 
 
-def analyst_node(state: ResearchState) -> dict:
+async def analyst_node(state: ResearchState) -> dict:
     """分析节点：综合搜索结果"""
     materials = []
     for i, r in enumerate(state["search_results"], 1):
@@ -30,7 +30,7 @@ def analyst_node(state: ResearchState) -> dict:
     ])
 
     chain = prompt | llm
-    response = chain.invoke({
+    response = await chain.ainvoke({
         "topic": state["topic"],
         "search_materials": search_materials or "（无搜索结果）",
     })

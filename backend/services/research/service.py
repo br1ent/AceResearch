@@ -205,23 +205,23 @@ class ResearchService:
 
             await agent_broadcast("analyst", "正在分析搜索结果", f"共 {len(state['search_results'])} 条结果，提炼关键发现...", 50)
             from agents.research.nodes.analyst import analyst_node
-            state.update(analyst_node(state))
+            state.update(await analyst_node(state))
 
             await agent_broadcast("writer", "正在撰写研究报告", "根据大纲和分析结果生成报告...请耐心等待", 65)
             from agents.research.nodes.writer import writer_node
-            state.update(writer_node(state))
+            state.update(await writer_node(state))
 
             retries = 0
             while retries <= 2:
                 await agent_broadcast("reviewer", "正在审查报告质量", "从完整性、准确性、深度等维度评分...", 85)
                 from agents.research.nodes.reviewer import reviewer_node
-                state.update(reviewer_node(state))
+                state.update(await reviewer_node(state))
                 if state["status"] == "completed":
                     break
                 retries += 1
                 if retries <= 2:
                     await agent_broadcast("writer", "正在根据审查意见修改报告", f"第 {retries} 次修改，优化内容...", 75)
-                    state.update(writer_node(state))
+                    state.update(await writer_node(state))
 
             final_report = state.get("final_report") or state.get("report_draft", "")
 

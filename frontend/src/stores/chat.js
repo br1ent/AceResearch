@@ -253,6 +253,10 @@ export const useChatStore = defineStore('chat', () => {
     currentConvId.value = conv.id
     mode.value = conv.mode || 'research'
     await fetchMessages(conv.id)
+    // 切换会话时重置研究状态（研究是后台任务，新会话没有正在运行的研究）
+    isResearching.value = false
+    researchProgress.value = 0
+    researchMessage.value = ''
     if (conv.mode === 'research') connectWebSocket(conv.id)
   }
 

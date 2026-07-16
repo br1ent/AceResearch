@@ -24,7 +24,12 @@ function scrollToBottom() {
   })
 }
 
-onMounted(focusInput)
+onMounted(() => {
+  focusInput()
+  if (chatStore.currentConvId && chatStore.isResearching) {
+    chatStore.connectWebSocket(chatStore.currentConvId)
+  }
+})
 watch(() => route.path, (to) => {
   if (to === '/chat') focusInput()
 })
@@ -148,8 +153,7 @@ function formatTime(isoStr) {
       <div class="max-w-4xl mx-auto flex gap-2">
         <input v-model="inputText" ref="inputRef" type="text" class="input input-bordered w-full rounded-full pl-4"
           :placeholder="chatStore.mode === 'research' ? (chatStore.isResearching ? '研究进行中...' : '输入研究主题...') : (chatStore.isChatting ? '输入新消息打断当前回复...' : '输入消息...')"
-          :disabled="chatStore.isResearching" @keydown.enter="sendMessage"
-           />
+          :disabled="chatStore.isResearching" @keydown.enter="sendMessage" />
         <button class="btn btn-neutral btn-circle shrink-0" :disabled="!inputText.trim() || chatStore.isResearching" @click="sendMessage">
           <Send class="w-4 h-4" />
         </button>

@@ -28,7 +28,7 @@ _fix_llm = ChatOpenAI(
 )
 
 
-def _extract_json(text: str) -> dict | None:
+async def _extract_json(text: str) -> dict | None:
     """分层提取 JSON：先尝试直接解析，再用正则匹配，最后用 LLM 修复"""
     # 第一层：直接解析
     text = text.strip()
@@ -60,7 +60,7 @@ def _extract_json(text: str) -> dict | None:
 
     # 第四层：用 LLM 修复
     try:
-        resp = _fix_llm.invoke([
+        resp = await _fix_llm.ainvoke([
             ("system", "你是一个 JSON 修复器。提取下面文本中的 JSON 对象（包含 passed、issues、suggestions 字段），只输出 JSON，不要其他内容。"),
             ("human", text[:2000]),
         ])
@@ -75,7 +75,7 @@ def _extract_json(text: str) -> dict | None:
     return None
 
 
-def reviewer_node(state: ResearchState) -> dict:
+async def reviewer_node(state: ResearchState) -> dict:
     """审查节点：评估报告质量"""
     if not state.get("report_draft"):
         return {"final_report": "报告生成失败", "status": "failed", "error": "报告草稿为空"}
@@ -91,13 +91,13 @@ def reviewer_node(state: ResearchState) -> dict:
     ])
 
     chain = prompt | llm
-    response = chain.invoke({
+    response = await chain.ainvoke({
         "title": state["report_title"],
         "outline": outline_text,
         "report": state["report_draft"][:8000],
     })
 
-    review = _extract_json(response.content)
+    review = await _extract_json(response.content)
 
     # 解析失败或 LLM 无法修复 → 强制触发重写
     if review is None:

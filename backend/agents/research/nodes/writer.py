@@ -17,7 +17,7 @@ llm = ChatOpenAI(
 )
 
 
-def writer_node(state: ResearchState) -> dict:
+async def writer_node(state: ResearchState) -> dict:
     """写作节点：撰写研究报告"""
     outline_text = "\n".join(f"- {s}" for s in state["outline"])
 
@@ -41,7 +41,7 @@ def writer_node(state: ResearchState) -> dict:
     ])
 
     chain = prompt | llm
-    response = chain.invoke({
+    response = await chain.ainvoke({
         "title": state["report_title"],
         "outline": outline_text,
         "analysis": state["analysis"],
