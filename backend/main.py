@@ -30,14 +30,23 @@ app.include_router(reports_router)
 app.include_router(prompts_router)
 app.include_router(ws_router)
 
-# 前端构建产物 — 自动处理静态文件 + SPA 路由
+# 前端构建产物 — 静态文件
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
-if FRONTEND_DIST.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
+app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
 
-# 媒体文件（头像等），在根挂载之后注册，保持优先匹配
-if (Path(__file__).parent / "media").exists():
-    app.mount("/media", StaticFiles(directory="media"), name="media")
+# 媒体文件（头像等）
+app.mount("/media", StaticFiles(directory="media"), name="media")
+
+
+# SPA 兜底：未匹配路径返回 index.html
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    return FileResponse(str(FRONTEND_DIST / "index.html"))
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse(str(FRONTEND_DIST / "favicon.ico"))
 
 
 @app.on_event("startup")

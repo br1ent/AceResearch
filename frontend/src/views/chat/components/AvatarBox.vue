@@ -21,8 +21,8 @@ const initial = computed(() => {
   return userStore.username?.charAt(0)?.toUpperCase() || 'U'
 })
 
-// AI 头像路径（放到 frontend/public/ 下）
-const aiAvatar = '/ai-avatar.png'
+// AI 头像（放到后端 media/ 目录下）
+const aiAvatar = 'http://localhost:8000/media/ai-avatar.png'
 </script>
 
 <template>
