@@ -55,9 +55,9 @@ async function handleLogout() {
         账号
       </li>
       <li>
-        <router-link :to="{name: 'user-space-index'}" class="flex items-center gap-3 px-4 py-2 font-semibold" @click="closeMenu">
+        <router-link :to="{name: 'user-space-index'}" class="flex items-center gap-3 px-4 py-2 font-semibold min-w-0" @click="closeMenu">
           <User class="w-4 h-4 shrink-0" />
-          <span class="truncate">{{ user.username }}</span>
+          <span class="truncate block max-w-[120px]">{{ user.username }}</span>
         </router-link>
       </li>
 

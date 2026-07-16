@@ -53,6 +53,15 @@ class ProfileService:
         }
 
     def update_profile(self, user: User, username: str, email: str) -> dict:
+        if not username or not username.strip():
+            return {"success": False, "message": "用户名不能为空"}
+        if len(username) > 20:
+            return {"success": False, "message": "用户名不能超过20个字符"}
+        if not email or not email.strip():
+            return {"success": False, "message": "邮箱不能为空"}
+        if len(email) > 50:
+            return {"success": False, "message": "邮箱不能超过50个字符"}
+
         existing = self.db.query(User).filter(
             User.username == username, User.id != user.id
         ).first()
