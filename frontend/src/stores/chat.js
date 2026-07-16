@@ -12,6 +12,7 @@ export const useChatStore = defineStore('chat', () => {
   const isResearching = ref(false)
   const researchProgress = ref(0)
   const researchMessage = ref('')
+  const researchingConvId = ref(null)  // 跟踪哪个对话有正在运行的研究
   const isChatting = ref(false)
   const planReportId = ref(null)  // 当前待确认的研究方案
   const currentPlan = ref(null)   // {report_title, outline, subtasks, report_id}
@@ -98,11 +99,11 @@ export const useChatStore = defineStore('chat', () => {
             researchProgress.value = data.progress || researchProgress.value
             break
           case 'report_completed':
-            isResearching.value = false; researchProgress.value = 100; researchMessage.value = '报告已生成完成'
+            isResearching.value = false; researchProgress.value = 100; researchMessage.value = '报告已生成完成'; researchingConvId.value = null
             addMessage({ id: Date.now(), role: 'assistant', content: data.summary || '📄 研究报告已生成', msg_type: 'report', created_at: new Date().toISOString(), metadata_json: JSON.stringify({ report_id: data.report_id }) })
             break
           case 'error':
-            isResearching.value = false
+            isResearching.value = false; researchingConvId.value = null
             addMessage({ id: Date.now(), role: 'assistant', content: `❌ ${data.message || '研究过程发生错误'}`, msg_type: 'error', created_at: new Date().toISOString() })
             break
           case 'plan_ready':
@@ -157,6 +158,7 @@ export const useChatStore = defineStore('chat', () => {
       if (res.data?.success) {
         const { conversation_id } = res.data.data
         currentConvId.value = conversation_id; messages.value = []
+        researchingConvId.value = conversation_id
         connectWebSocket(conversation_id)
         addMessage({ id: Date.now(), role: 'user', content: topic, msg_type: 'text', created_at: new Date().toISOString() })
         addMessage({ id: Date.now() + 1, role: 'assistant', content: '🔍 正在分析研究主题...', msg_type: 'agent_status', created_at: new Date().toISOString() })
@@ -165,7 +167,7 @@ export const useChatStore = defineStore('chat', () => {
       }
     } catch (e) {
       console.error('发起研究失败', e)
-      isResearching.value = false; researchMessage.value = '发起研究失败，请重试'
+      isResearching.value = false; researchMessage.value = '发起研究失败，请重试'; researchingConvId.value = null
       addMessage({ id: Date.now(), role: 'assistant', content: '❌ 系统错误，请稍后重试', msg_type: 'error', created_at: new Date().toISOString() })
     }
     return null
@@ -253,11 +255,16 @@ export const useChatStore = defineStore('chat', () => {
     currentConvId.value = conv.id
     mode.value = conv.mode || 'research'
     await fetchMessages(conv.id)
-    // 切换会话时重置研究状态（研究是后台任务，新会话没有正在运行的研究）
-    isResearching.value = false
-    researchProgress.value = 0
-    researchMessage.value = ''
-    if (conv.mode === 'research') connectWebSocket(conv.id)
+    if (conv.mode !== 'research') return
+    // 如果切回正在研究的对话，恢复进度；否则重置
+    if (conv.id === researchingConvId.value && isResearching.value) {
+      connectWebSocket(conv.id)
+    } else {
+      isResearching.value = false
+      researchProgress.value = 0
+      researchMessage.value = ''
+      connectWebSocket(conv.id)
+    }
   }
 
   // ---- 确认研究方案 -------
@@ -269,6 +276,7 @@ export const useChatStore = defineStore('chat', () => {
     isResearching.value = true
     researchProgress.value = 25
     researchMessage.value = '正在搜索资料...'
+    researchingConvId.value = currentConvId.value
     currentPlan.value = null
     addMessage({ id: Date.now(), role: 'user', content: '✅ 确认方案，开始研究', msg_type: 'text', created_at: new Date().toISOString() })
     addMessage({ id: Date.now() + 1, role: 'assistant', content: '🔍 正在搜索资料...', msg_type: 'agent_status', created_at: new Date().toISOString() })

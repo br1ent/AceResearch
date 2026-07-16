@@ -20,6 +20,9 @@ const photoUrl = computed(() => {
 const initial = computed(() => {
   return userStore.username?.charAt(0)?.toUpperCase() || 'U'
 })
+
+// AI 头像路径（放到 frontend/public/ 下）
+const aiAvatar = '/ai-avatar.png'
 </script>
 
 <template>
@@ -37,8 +40,11 @@ const initial = computed(() => {
   <!-- AI 头像 -->
   <div
     v-else
-    class="w-8 h-8 rounded-full bg-neutral text-neutral-content flex items-center justify-center shrink-0"
+    class="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-base-300"
   >
-    <Bot class="w-4 h-4" />
+    <img v-if="aiAvatar" :src="aiAvatar" class="w-full h-full object-cover" alt="AI" />
+    <div v-else class="w-full h-full bg-neutral text-neutral-content flex items-center justify-center">
+      <Bot class="w-4 h-4" />
+    </div>
   </div>
 </template>

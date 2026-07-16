@@ -35,10 +35,12 @@ watch(() => route.path, (to) => {
 })
 
 const visibleMessages = computed(() => {
+  let msgs = chatStore.messages
   if (chatStore.mode === 'chat') {
-    return chatStore.messages.filter(m => m.msg_type === 'text' || m.msg_type === 'report')
+    msgs = msgs.filter(m => m.msg_type === 'text' || m.msg_type === 'report')
   }
-  return chatStore.messages
+  // 按创建时间排序，保证消息顺序一致
+  return [...msgs].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 })
 
 watch(visibleMessages, () => scrollToBottom(), { deep: true })
