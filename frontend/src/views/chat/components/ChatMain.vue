@@ -146,9 +146,10 @@ function formatTime(isoStr) {
     <!-- 输入区域 -->
     <div class="border-t border-base-200 p-4">
       <div class="max-w-4xl mx-auto flex gap-2">
-        <input v-model="inputText" ref="inputRef" type="text" class="input input-bordered w-full rounded-full pl-4 pr-12"
+        <input v-model="inputText" ref="inputRef" type="text" class="input input-bordered w-full rounded-full pl-4"
           :placeholder="chatStore.mode === 'research' ? (chatStore.isResearching ? '研究进行中...' : '输入研究主题...') : (chatStore.isChatting ? '输入新消息打断当前回复...' : '输入消息...')"
-          :disabled="chatStore.isResearching" @keydown.enter="sendMessage" />
+          :disabled="chatStore.isResearching" @keydown.enter="sendMessage"
+          style="direction: rtl; text-align: left;" />
         <button class="btn btn-neutral btn-circle shrink-0" :disabled="!inputText.trim() || chatStore.isResearching" @click="sendMessage">
           <Send class="w-4 h-4" />
         </button>

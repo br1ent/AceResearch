@@ -196,7 +196,7 @@ class ResearchService:
                 "outline": outline, "subtasks": subtasks,
                 "search_results": [], "analysis": "",
                 "report_title": "", "report_draft": "", "final_report": "", "sources": [],
-                "status": "running", "progress": 25.0, "error": None, "reviewer_retries": 0,
+                "status": "running", "progress": 25.0, "error": None, "reviewer_retries": 0, "reviewer_feedback": None,
             }
 
             await agent_broadcast("researcher", "正在搜索研究资料", f"共 {len(subtasks)} 个子任务，并行搜索中...", 30)

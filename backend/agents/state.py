@@ -54,3 +54,4 @@ class ResearchState(TypedDict):
     progress: float                     # 总体进度 0~100
     error: Optional[str]                # 错误信息
     reviewer_retries: int               # 审查重试次数
+    reviewer_feedback: Optional[str]    # 审查不通过时的反馈意见（传给 Writer 修改用）
