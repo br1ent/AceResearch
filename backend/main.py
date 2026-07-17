@@ -17,8 +17,8 @@ from routers.knowledge_base.documents import router as kb_router
 settings = get_settings()
 
 app = FastAPI(
-    title="Smart Research Assistant API",
-    description="智能研究助手后端API",
+    title="DeepResearch API",
+    description="DeepResearch 深研 - 多 Agent 协作深度研究平台",
     version="1.0.0"
 )
 
