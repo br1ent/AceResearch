@@ -102,10 +102,10 @@ CHAT_TOOLS = [get_current_time, get_weather, web_search]
 # 知识库模式额外工具（按需绑定）
 @tool
 def search_knowledge_base(query: str) -> str:
-    """搜索用户个人知识库。当用户询问与个人文档、上传资料、知识库相关的问题时使用。
+    """在用户上传的个人文档中搜索相关内容。当用户提问时，你必须优先使用这个工具来从文档中查找信息来回答。适用于任何用户提问，尤其是涉及文档内容的问题。
 
     Args:
-        query: 搜索查询词
+        query: 搜索关键词或问题，用自然语言描述你想查找的内容
     """
     from services.knowledge_base.retrieval_service import search_knowledge
     from agents.chat.tools import _current_user_id

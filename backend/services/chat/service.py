@@ -89,6 +89,7 @@ class ChatService:
             "conversation_id": conversation_id,
             "user_message": user_message,
             "user_id": uid,
+            "mode": mode,
             "system_prompt": "",
             "memory_text": "",
             "history": [],

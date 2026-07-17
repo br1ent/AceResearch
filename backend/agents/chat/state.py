@@ -8,6 +8,7 @@ class ChatState(TypedDict):
     conversation_id: int
     user_message: str
     user_id: int
+    mode: str  # chat / knowledge
     # 上下文组件
     system_prompt: str
     memory_text: str

@@ -96,7 +96,7 @@ function fileIcon(type) {
     <!-- 字数提示 -->
     <div v-if="store.documents.length < 3" class="flex items-center gap-2 mb-6 text-xs text-warning/80">
       <AlertTriangle class="w-3.5 h-3.5" />
-      <span>文档内容超过 1000 字部分将被自动截断，请注意字数</span>
+      <span>文档内容超过 5000 字部分将被自动截断，请注意字数</span>
     </div>
 
     <!-- 错误 -->
