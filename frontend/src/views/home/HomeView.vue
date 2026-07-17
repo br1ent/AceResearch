@@ -45,7 +45,7 @@ const features = [
         多 Agent 协作
       </div>
       <h1 class="text-5xl font-bold tracking-tight mb-4">
-        DeepResearch 深研
+        AceResearch 研思
       </h1>
       <p class="text-xl text-base-content/60 max-w-xl mx-auto mb-8 leading-relaxed">
         基于多 Agent 协作的深度研究平台，支持智能对话、自动生成研究报告和个人知识库问答

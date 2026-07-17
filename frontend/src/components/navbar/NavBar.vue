@@ -7,7 +7,7 @@ import UserMenu from '@/components/navbar/userMenu/UserMenu.vue'
     <!-- 左侧 Logo -->
     <div class="navbar-start">
       <router-link :to="{ name: 'home-index' }" class="flex items-center gap-2 ml-5 btn btn-sm btn-ghost">
-        <span class="text-lg font-semibold tracking-tight">DeepResearch 深研</span>
+        <span class="text-lg font-semibold tracking-tight">AceResearch 研思</span>
       </router-link>
     </div>
     <!-- 右侧 -->

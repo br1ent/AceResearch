@@ -105,7 +105,7 @@ function formatTime(isoStr) {
       <template v-else-if="chatStore.mode === 'knowledge'">
         <h2 class="text-2xl font-bold mb-2">📁 个人文档检索</h2>
         <p class="text-base-content/50 text-center max-w-md">基于你上传的文档内容进行智能问答</p>
-        <router-link :to="{ name: 'documents-index' }" class="btn btn-outline btn-sm mt-4 gap-2">
+        <router-link :to="{ name: 'documents-index' }" class="btn btn-outline btn-sm btn-ghost mt-4 gap-2">
           <BookOpen class="w-4 h-4" /> 管理文档
         </router-link>
       </template>

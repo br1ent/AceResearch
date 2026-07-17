@@ -17,8 +17,8 @@ from routers.knowledge_base.documents import router as kb_router
 settings = get_settings()
 
 app = FastAPI(
-    title="DeepResearch API",
-    description="DeepResearch 深研 - 多 Agent 协作深度研究平台",
+    title="AceResearch API",
+    description="AceResearch 研思 - 多 Agent 协作深度研究平台",
     version="1.0.0"
 )
 
@@ -40,15 +40,15 @@ app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name=
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 
+# 图标
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse(str(FRONTEND_DIST / "favicon.ico"))
+
 # SPA 兜底：未匹配路径返回 index.html
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
     return FileResponse(str(FRONTEND_DIST / "index.html"))
-
-
-@app.get("/favicon.ico")
-async def favicon():
-    return FileResponse(str(FRONTEND_DIST / "favicon.ico"))
 
 
 @app.on_event("startup")
