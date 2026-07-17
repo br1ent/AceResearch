@@ -203,7 +203,7 @@ export const useChatStore = defineStore('chat', () => {
         body: JSON.stringify({
           conversation_id: currentConvId.value,
           message: text,
-          mode: 'chat',
+          mode: mode.value,
         }),
       })
 

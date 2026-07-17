@@ -2,11 +2,11 @@
 from langchain_core.messages import ToolMessage
 
 from agents.chat.state import ChatState
-from agents.chat.tools import CHAT_TOOLS
+from agents.chat.tools import CHAT_TOOLS, KB_TOOLS
 
 
 # 工具名 → 工具函数的映射
-_tool_map = {t.name: t for t in CHAT_TOOLS}
+_tool_map = {t.name: t for t in CHAT_TOOLS + KB_TOOLS}
 
 
 def tool_node(state: ChatState) -> dict:

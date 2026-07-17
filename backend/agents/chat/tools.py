@@ -98,3 +98,19 @@ def web_search(query: str) -> str:
 
 
 CHAT_TOOLS = [get_current_time, get_weather, web_search]
+
+# 知识库模式额外工具（按需绑定）
+@tool
+def search_knowledge_base(query: str) -> str:
+    """搜索用户个人知识库。当用户询问与个人文档、上传资料、知识库相关的问题时使用。
+
+    Args:
+        query: 搜索查询词
+    """
+    from services.knowledge_base.retrieval_service import search_knowledge
+    from agents.chat.tools import _current_user_id
+    return search_knowledge(_current_user_id, query)
+
+
+_current_user_id: int = 0
+KB_TOOLS = [search_knowledge_base]

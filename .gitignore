@@ -28,10 +28,11 @@ pip-wheel-metadata/
 .env.*.local
 
 # ============================================
-# Media / Static (user uploads)
+# Media / Static / Knowledge Base
 # ============================================
 backend/media/
 backend/static/
+backend/chroma_data/
 
 # ============================================
 # IDE / Editor
@@ -85,10 +86,10 @@ ehthumbs.db
 Desktop.ini
 
 # ============================================
-# Claude
+# Claude / Reasonix
 # ============================================
 .claude/
-.reasonix
+.reasonix/
 
 # ============================================
 # Frontend / Node.js

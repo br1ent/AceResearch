@@ -16,7 +16,7 @@ class Conversation(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, comment="所属用户ID"
     )
     title: Mapped[str] = mapped_column(String(100), default="新对话", comment="对话标题")
-    mode: Mapped[str] = mapped_column(String(20), default="research", comment="模式: chat / research")
+    mode: Mapped[str] = mapped_column(String(20), default="research", comment="模式: chat / research / knowledge")
 
     def __repr__(self) -> str:
         return f"<Conversation {self.id} user={self.user_id} mode={self.mode} title={self.title}>"

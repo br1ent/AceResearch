@@ -110,7 +110,6 @@ class ResearchService:
             if not conv:
                 return
             topic = conv.title  # 用对话标题作为原主题
-            # 把反馈拼入 topic 让 Planner 理解修改需求
             revised_topic = f"{topic}\n\n用户修改意见：{feedback}"
 
             result = await planning_workflow.run(topic=revised_topic, user_id=user_id, conversation_id=conversation_id)
@@ -156,7 +155,6 @@ class ResearchService:
         if not report or report.status != "awaiting_confirm":
             return {"success": False, "message": "报告状态异常，无法继续"}
 
-        # 从 report.content 恢复规划结果
         plan_data = json.loads(report.content) if report.content else {}
         outline = plan_data.get("outline", [])
         subtasks = plan_data.get("subtasks", [])
@@ -164,7 +162,6 @@ class ResearchService:
         report.status = "generating"
         self.db.commit()
 
-        # 添加确认消息
         self.conv_service.add_message(conv_id=conversation_id, role="user", content="✅ 确认方案，开始研究", msg_type="text")
         self.conv_service.add_message(conv_id=conversation_id, role="assistant", content="🔍 正在搜索资料...", msg_type="agent_status")
 

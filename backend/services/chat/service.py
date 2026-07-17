@@ -1,11 +1,11 @@
-"""闲聊服务：LangGraph 上下文组装 + ReAct 工具循环 + DeepSeek 流式输出"""
+"""闲聊 / 知识检索服务：LangGraph 上下文组装 + ReAct 工具循环 + DeepSeek 流式输出"""
 import asyncio
 from langchain_openai import ChatOpenAI
 
 from config.agents import get_agent_settings
 from agents.chat.graph import ChatGraph
 from agents.chat.state import ChatState
-from agents.chat.tools import CHAT_TOOLS
+from agents.chat.tools import CHAT_TOOLS, KB_TOOLS
 from agents.chat.nodes.tool_node import tool_node
 
 settings = get_agent_settings()
@@ -27,19 +27,24 @@ class ChatService:
         from services.chat.conversation import ConversationService
         self.conv_service = ConversationService(db_session)
 
-    def _get_user_memory(self, user_id: int) -> str:
+    def _get_user_memory(self, user_id: int, mode: str = "chat") -> str:
         from models.user import User
         user = self.db.query(User).filter(User.id == user_id).first()
-        return user.memory if user and user.memory else ""
+        if not user:
+            return ""
+        return user.kb_memory if mode == "knowledge" else user.memory
 
-    def _update_user_memory(self, user_id: int, summary: str):
+    def _update_user_memory(self, user_id: int, summary: str, mode: str = "chat"):
         from models.user import User
         user = self.db.query(User).filter(User.id == user_id).first()
         if user:
-            user.memory = summary
+            if mode == "knowledge":
+                user.kb_memory = summary
+            else:
+                user.memory = summary
             self.db.commit()
 
-    async def _run_memory_extraction(self, conversation_id: int, user_id: int):
+    async def _run_memory_extraction(self, conversation_id: int, user_id: int, mode: str = "chat"):
         from agents.memory.graph import MemoryGraph
         mg = MemoryGraph()
 
@@ -51,7 +56,7 @@ class ChatService:
             f"{'用户' if m.role == 'user' else '助手'}: {m.content[:200]}"
             for m in history[-10:]
         )
-        existing = self._get_user_memory(user_id)
+        existing = self._get_user_memory(user_id, mode)
 
         result = mg.invoke({
             "user_id": user_id,
@@ -61,16 +66,23 @@ class ChatService:
             "memory_summary": existing,
         })
         if result.get("memory_updated"):
-            self._update_user_memory(user_id, result["memory_summary"])
+            self._update_user_memory(user_id, result["memory_summary"], mode)
 
     def _get_current_user_id(self, conversation_id: int) -> int:
         from models.chat import Conversation as ConvModel
         conv = self.db.query(ConvModel).filter(ConvModel.id == conversation_id).first()
         return conv.user_id if conv else 0
 
-    async def chat_stream(self, conversation_id: int, user_message: str):
+    async def chat_stream(self, conversation_id: int, user_message: str, mode: str = "chat"):
         self.conv_service.add_message(conv_id=conversation_id, role="user", content=user_message, msg_type="text")
         uid = self._get_current_user_id(conversation_id)
+
+        # 知识库模式绑定额外工具
+        tools = CHAT_TOOLS
+        if mode == "knowledge":
+            import agents.chat.tools as tools_mod
+            tools_mod._current_user_id = uid
+            tools = CHAT_TOOLS + KB_TOOLS
 
         # 1. 通过 LangGraph 组装上下文
         state: ChatState = chat_graph.invoke({
@@ -88,7 +100,7 @@ class ChatService:
         history = state["history"]
 
         # 2. ReAct 循环：LLM 流式调用 + 工具执行
-        llm_with_tools = _llm.bind_tools(CHAT_TOOLS)
+        llm_with_tools = _llm.bind_tools(tools)
         full_reply = ""
 
         while True:
@@ -148,4 +160,4 @@ class ChatService:
         self.conv_service.add_message(conv_id=conversation_id, role="assistant", content=full_reply, msg_type="text")
 
         if uid:
-            asyncio.create_task(self._run_memory_extraction(conversation_id, uid))
+            asyncio.create_task(self._run_memory_extraction(conversation_id, uid, mode))

@@ -1,13 +1,15 @@
 <script setup>
 import { ref, onUnmounted, onMounted, watch, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { Send, Loader2, BookOpen, MessageCircle, FileText } from '@lucide/vue'
+import { Send, Loader2, BookOpen, MessageCircle, FileText, Lock } from '@lucide/vue'
 import { useUserStore } from '@/stores/user.js'
 import { useChatStore } from '@/stores/chat.js'
+import { useKnowledgeStore } from '@/stores/knowledge.js'
 import AvatarBox from './AvatarBox.vue'
 
 const userStore = useUserStore()
 const chatStore = useChatStore()
+const knowledgeStore = useKnowledgeStore()
 const route = useRoute()
 
 const inputText = ref('')
@@ -29,6 +31,7 @@ onMounted(() => {
   if (chatStore.currentConvId && chatStore.isResearching) {
     chatStore.connectWebSocket(chatStore.currentConvId)
   }
+  knowledgeStore.fetchDocuments()
 })
 watch(() => route.path, (to) => {
   if (to === '/chat') focusInput()
@@ -39,7 +42,6 @@ const visibleMessages = computed(() => {
   if (chatStore.mode === 'chat') {
     msgs = msgs.filter(m => m.msg_type === 'text' || m.msg_type === 'report')
   }
-  // 按创建时间排序，保证消息顺序一致
   return [...msgs].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 })
 
@@ -84,12 +86,28 @@ function formatTime(isoStr) {
         @click="chatStore.switchMode('research')" :disabled="chatStore.isResearching || chatStore.isChatting">
         <BookOpen class="w-4 h-4" /> 研究模式
       </button>
+      <div class="tooltip" :data-tip="knowledgeStore.docCount === 0 ? '请先上传个人文档' : ''">
+        <button class="btn btn-sm gap-1.5" :class="chatStore.mode === 'knowledge' ? 'btn-neutral' : 'btn-ghost'"
+          @click="chatStore.switchMode('knowledge')"
+          :disabled="chatStore.isResearching || chatStore.isChatting || knowledgeStore.docCount === 0">
+          <Lock v-if="knowledgeStore.docCount === 0" class="w-3.5 h-3.5" />
+          <BookOpen v-else class="w-4 h-4" />
+            {{ knowledgeStore.docCount === 0 ? '个人文档检索' : '个人文档检索' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="visibleMessages.length === 0" class="flex-1 flex flex-col items-center justify-center px-6">
       <template v-if="chatStore.mode === 'research'">
         <h2 class="text-2xl font-bold mb-2">{{ userStore.username }}，今天想研究些什么领域？</h2>
         <p class="text-base-content/50 text-center max-w-md">请输入一个研究主题，我将为你规划研究任务、搜索资料并生成报告</p>
+      </template>
+      <template v-else-if="chatStore.mode === 'knowledge'">
+        <h2 class="text-2xl font-bold mb-2">📁 个人文档检索</h2>
+        <p class="text-base-content/50 text-center max-w-md">基于你上传的文档内容进行智能问答</p>
+        <router-link :to="{ name: 'documents-index' }" class="btn btn-outline btn-sm mt-4 gap-2">
+          <BookOpen class="w-4 h-4" /> 管理文档
+        </router-link>
       </template>
       <template v-else>
         <h2 class="text-2xl font-bold mb-2">👋 {{ userStore.username }}，有什么想聊的？</h2>

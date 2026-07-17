@@ -24,6 +24,8 @@ async def send_message_stream(
     """闲聊流式输出（SSE）"""
     conv_service = ConversationService(db)
 
+    mode = body.mode or "chat"
+
     # 确定/创建对话
     if body.conversation_id:
         conv = conv_service.get_by_id(body.conversation_id, current_user.id)
@@ -31,7 +33,7 @@ async def send_message_stream(
             raise HTTPException(status_code=404, detail="对话不存在")
     else:
         title = body.message[:30] + ("..." if len(body.message) > 30 else "")
-        conv = conv_service.create(user_id=current_user.id, title=title, mode="chat")
+        conv = conv_service.create(user_id=current_user.id, title=title, mode=mode)
 
     chat_service = ChatService(db)
 
@@ -41,7 +43,7 @@ async def send_message_stream(
         yield f"data: {first}\n\n"
 
         # 逐 token 推送
-        async for token in chat_service.chat_stream(conv.id, body.message):
+        async for token in chat_service.chat_stream(conv.id, body.message, mode):
             yield f"data: {json.dumps({'type': 'token', 'content': token}, ensure_ascii=False)}\n\n"
 
         # 结束信号

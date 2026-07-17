@@ -9,6 +9,7 @@ import ResetPwdView from "@/views/user/ResetPwdView.vue";
 import NotFoundView from "@/views/error/NotFoundView.vue";
 import { useUserStore } from "@/stores/user.js";
 import ProfileView from "@/views/user/space/ProfileView.vue";
+import DocumentsView from "@/views/knowledge/DocumentsView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -55,6 +56,12 @@ const router = createRouter({
       path: '/report',
       name: 'report-index',
       component: ReportView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/documents',
+      name: 'documents-index',
+      component: DocumentsView,
       meta: { requiresAuth: true },
     },
     {

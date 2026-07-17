@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class ConversationCreate(BaseModel):
     """创建对话请求"""
     title: str = Field(default="新对话", max_length=100)
-    mode: str = Field(default="research", pattern=r"^(chat|research)$")
+    mode: str = Field(default="research", pattern=r"^(chat|research|knowledge)$")
 
 
 class ConversationOut(BaseModel):
@@ -41,4 +41,4 @@ class SendMessageRequest(BaseModel):
     """发送消息请求（通用：闲聊/研究）"""
     conversation_id: int | None = Field(default=None, description="已有对话ID，为空则新建")
     message: str = Field(..., min_length=1, max_length=2000)
-    mode: str = Field(default="chat", pattern=r"^(chat|research)$")
+    mode: str = Field(default="chat", pattern=r"^(chat|research|knowledge)$")

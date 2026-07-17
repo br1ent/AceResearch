@@ -12,6 +12,7 @@ from routers.research.router import router as research_router
 from routers.user import router as user_router
 from routers.prompts import router as prompts_router
 from routers.ws import router as ws_router
+from routers.knowledge_base.documents import router as kb_router
 
 settings = get_settings()
 
@@ -29,6 +30,7 @@ app.include_router(research_router)
 app.include_router(reports_router)
 app.include_router(prompts_router)
 app.include_router(ws_router)
+app.include_router(kb_router)
 
 # 前端构建产物 — 静态文件
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"

@@ -13,7 +13,8 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, comment="用户名")
     password_hash: Mapped[str] = mapped_column(String(100), comment="用户加密的密码")
     photo: Mapped[str] = mapped_column(String(100), comment="用户头像的url")
-    memory: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="", comment="用户记忆JSON")
+    memory: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="", comment="用户记忆JSON（闲聊模式）")
+    kb_memory: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="", comment="用户记忆JSON（知识检索模式）")
 
     def __repr__(self) -> str:
         return f"<{self.id} {self.username} {self.email}>"
