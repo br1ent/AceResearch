@@ -38,3 +38,18 @@ def get_knowledge_system_prompt() -> str:
     if not prompt:
         prompt = "你是一个文档问答助手。请根据用户上传的文档内容回答问题，使用纯文本格式，不要使用Markdown。"
     return prompt
+
+
+def get_summarizer_prompt() -> str:
+    """研究报告生成后的自动总结提示词"""
+    prompt = get_prompt("research", "summarizer")
+    if not prompt:
+        prompt = (
+            "你是一个研究助手。请根据以下研究报告，生成一段简洁的总结消息，格式如下：\n\n"
+            "📄 研究报告已生成\n\n"
+            "标题：<报告标题>\n"
+            "本次研究围绕 <一句话描述研究主题>，覆盖以下方面：<用 3~5 句话概括研究了什么、有哪些重要发现/结论>\n"
+            "报告已保存到「我的报告」页面。\n\n"
+            "要求：语言自然流畅，不罗列大纲条目，只描述研究收获。"
+        )
+    return prompt

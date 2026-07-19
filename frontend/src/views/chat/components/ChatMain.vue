@@ -51,15 +51,6 @@ onUnmounted(() => {
   chatStore.disconnectWebSocket()
 })
 
-function submitRevise(msg) {
-  const feedback = msg._reviseText?.trim()
-  if (!feedback || !msg.plan?.report_id) return
-  chatStore.revisePlan(msg.plan.report_id, feedback)
-  msg._revised = true
-  msg._showRevise = false
-  msg._reviseText = ''
-}
-
 async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || chatStore.isResearching) return

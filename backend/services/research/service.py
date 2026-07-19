@@ -231,15 +231,12 @@ class ResearchService:
                     report.status = "completed"
                     db.commit()
 
-                outline_text = "\n".join(f"- {o}" for o in outline)
-                report_title = state.get("report_title", "研究报告")
-                summary = (
-                    f"📄 研究报告已生成\n\n"
-                    f"标题：{report_title}\n"
-                    f"大纲\n{outline_text}\n"
-                    f"预计字数：约 {len(content)} 字\n\n"
-                    f"预计字数：约 {len(content)} 字\n\n"
-                    f"报告已保存到「我的报告」页面。"
+                # LLM 自动生成总结
+                from services.research.summarizer import summarize_report
+                summary = await summarize_report(
+                    title=state.get("report_title", "研究报告"),
+                    outline=outline,
+                    content=content,
                 )
                 conv_service.add_message(conv_id=conversation_id, role="assistant",
                     content=summary, msg_type="report",

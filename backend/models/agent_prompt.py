@@ -14,7 +14,7 @@ class AgentPrompt(Base):
     mode: Mapped[str] = mapped_column(String(20), nullable=False, comment="模式: chat / research / knowledge")
     stage: Mapped[str] = mapped_column(
         String(30), default="system",
-        comment="阶段: system / planner / researcher / analyst / writer / reviewer"
+        comment="阶段: system / planner / researcher / analyst / writer / reviewer / summarizer"
     )
     content: Mapped[str] = mapped_column(Text, nullable=False, comment="提示词内容")
     description: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="说明（方便识别）")
