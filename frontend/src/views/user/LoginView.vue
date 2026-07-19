@@ -64,11 +64,11 @@ async function handleLogin() {
         </div>
 
         <button class="btn btn-neutral w-full">登录</button>
-        <p class="text-center text-sm mt-3 text-base-content/60">
+        <p class="text-center text-sm mt-3 text-base-content/60 dark:text-white">
           没有账号？
           <router-link :to="{ name: 'user-register-index' }" class="link link-neutral link-hover">注册</router-link>
         </p>
-        <p class="text-center text-sm text-base-content/60">
+        <p class="text-center text-sm text-base-content/60 dark:text-white">
           <router-link :to="{ name: 'user-resetpwd-index' }" class="link link-neutral link-hover">忘记密码？</router-link>
         </p>
       </div>

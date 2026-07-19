@@ -1,18 +1,5 @@
 <script setup>
-import { useRouter } from 'vue-router'
-import { MessageCircle, BookOpen, Search, ArrowRight, Sparkles } from '@lucide/vue'
-import { useUserStore } from '@/stores/user.js'
-
-const router = useRouter()
-const user = useUserStore()
-
-function goChat() {
-  if (user.isLogin()) {
-    router.push({ name: 'chat-index' })
-  } else {
-    router.push({ name: 'user-login-index' })
-  }
-}
+import { MessageCircle, BookOpen, Search, Sparkles } from '@lucide/vue'
 
 const features = [
   {
@@ -48,12 +35,8 @@ const features = [
         AceResearch 研思
       </h1>
       <p class="text-xl text-base-content/60 max-w-xl mx-auto mb-8 leading-relaxed">
-        基于多 Agent 协作的深度研究平台，支持智能对话、自动生成研究报告和个人知识库问答
+        基于多 Agent 协作的深度研究平台，支持用户闲聊、自动生成研究报告和基于个人上传文档进行问答
       </p>
-      <button class="btn btn-neutral btn-lg gap-2 px-8 rounded-full" @click="goChat">
-        开始使用
-        <ArrowRight class="w-5 h-5" />
-      </button>
     </section>
 
     <!-- Features -->

@@ -82,7 +82,7 @@ async function handleRegister() {
         </div>
 
         <button class="btn btn-neutral w-full" @click="handleRegister">注册</button>
-        <p class="text-center text-sm mt-3 text-base-content/60">
+        <p class="text-center text-sm mt-3 text-base-content/60 dark:text-white">
           已有账号？<router-link :to="{ name: 'user-login-index' }" class="link link-neutral link-hover">登录</router-link>
         </p>
       </div>

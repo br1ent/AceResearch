@@ -1,9 +1,21 @@
 <script setup>
-import { Sun, Moon } from '@lucide/vue'
-import { useThemeStore } from '@/stores/theme.js'
+import {Sun, Moon, ArrowRight} from '@lucide/vue'
+import { useThemeStore } from '@/js/theme.js'
 import UserMenu from '@/components/navbar/userMenu/UserMenu.vue'
+import {useUserStore} from "@/stores/user.js";
+import {useRouter} from "vue-router";
 
 const themeStore = useThemeStore()
+const user = useUserStore()
+const router = useRouter()
+
+function goChat() {
+  if (user.isLogin()) {
+    router.push({ name: 'chat-index' })
+  } else {
+    router.push({ name: 'user-login-index' })
+  }
+}
 </script>
 
 <template>
@@ -13,6 +25,11 @@ const themeStore = useThemeStore()
       <router-link :to="{ name: 'home-index' }" class="flex items-center gap-2 ml-5 btn btn-sm btn-ghost">
         <span class="text-lg font-semibold tracking-tight">AceResearch 研思</span>
       </router-link>
+    </div>
+    <div class="navbar-center">
+      <button class="btn btn-ghost gap-2 px-8 rounded-full" @click="goChat">
+        开始使用
+      </button>
     </div>
     <!-- 右侧 -->
     <div class="navbar-end">

@@ -3,8 +3,11 @@
   <head>
     <script>
       (function() {
-        var theme = localStorage.getItem('ace-theme');
-        if (theme) document.documentElement.setAttribute('data-theme', theme);
+        const theme = localStorage.getItem('ace-theme');
+        if (theme) {
+          document.documentElement.setAttribute('data-theme', theme);
+          if (theme === 'dark') document.documentElement.classList.add('dark');
+        }
       })();
     </script>
     <meta charset="UTF-8">

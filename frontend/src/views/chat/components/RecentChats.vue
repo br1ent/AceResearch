@@ -93,7 +93,7 @@ function formatTime(isoStr) {
               class="text-[10px] px-1.5 py-0.5 rounded-full shrink-0"
               :class="conv.mode === 'research' ? 'bg-info/10 text-info' : conv.mode === 'knowledge' ? 'bg-accent/10 text-accent' : 'bg-success/10 text-success'"
             >
-              {{ conv.mode === 'research' ? '研究' : conv.mode === 'knowledge' ? '个人文档检索' : '闲聊' }}
+              {{ conv.mode === 'research' ? '研究' : conv.mode === 'knowledge' ? '文档检索' : '闲聊' }}
             </span>
           </div>
           <p class="text-xs text-base-content/30">{{ formatTime(conv.updated_at) }}</p>

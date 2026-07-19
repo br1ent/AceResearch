@@ -86,15 +86,11 @@ function formatTime(isoStr) {
         @click="chatStore.switchMode('research')" :disabled="chatStore.isResearching || chatStore.isChatting">
         <BookOpen class="w-4 h-4" /> 研究模式
       </button>
-      <div class="tooltip" :data-tip="knowledgeStore.docCount === 0 ? '请先上传个人文档' : ''">
-        <button class="btn btn-sm gap-1.5" :class="chatStore.mode === 'knowledge' ? 'btn-neutral' : 'btn-ghost'"
-          @click="chatStore.switchMode('knowledge')"
-          :disabled="chatStore.isResearching || chatStore.isChatting || knowledgeStore.docCount === 0">
-          <Lock v-if="knowledgeStore.docCount === 0" class="w-3.5 h-3.5" />
-          <BookOpen v-else class="w-4 h-4" />
-            {{ knowledgeStore.docCount === 0 ? '个人文档检索' : '个人文档检索' }}
-        </button>
-      </div>
+      <button class="btn btn-sm gap-1.5" :class="chatStore.mode === 'knowledge' ? 'btn-neutral' : 'btn-ghost'"
+        @click="chatStore.switchMode('knowledge')"
+        :disabled="chatStore.isResearching || chatStore.isChatting">
+        <BookOpen class="w-4 h-4" /> 个人文档检索
+      </button>
     </div>
 
     <div v-if="visibleMessages.length === 0" class="flex-1 flex flex-col items-center justify-center px-6">

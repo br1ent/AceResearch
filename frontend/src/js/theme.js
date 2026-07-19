@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 const STORAGE_KEY = 'ace-theme'
@@ -10,6 +10,7 @@ export const useThemeStore = defineStore('theme', () => {
     isDark.value = dark
     const theme = dark ? 'dark' : 'light'
     document.documentElement.setAttribute('data-theme', theme)
+    document.documentElement.classList.toggle('dark', dark)
     localStorage.setItem(STORAGE_KEY, theme)
   }
 

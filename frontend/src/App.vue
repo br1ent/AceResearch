@@ -1,7 +1,7 @@
 <script setup>
 import NavBar from './components/navbar/NavBar.vue'
 import { useUserStore } from '@/stores/user.js'
-import { useThemeStore } from '@/stores/theme.js'
+import { useThemeStore } from '@/js/theme.js'
 
 // 立即触发 auth 初始化，不阻塞渲染
 const userStore = useUserStore()
