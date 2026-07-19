@@ -12,6 +12,7 @@
     "@lucide/vue": "^1.24.0",
     "@tailwindcss/vite": "^4.3.2",
     "axios": "^1.18.1",
+    "croppie": "^2.6.5",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.3.0",
     "marked": "^18.0.6",
