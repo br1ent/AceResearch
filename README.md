@@ -9,32 +9,34 @@
 
 ## 项目简介
 
-AceResearch 是一个基于大语言模型的智能研究平台，通过多个 AI Agent 协作自动完成从规划、搜索、分析到撰写报告的全流程深度研究。平台同时支持智能对话、联网搜索、个人知识库检索等多种交互模式，为用户提供一站式的知识获取和研究辅助服务。
+AceResearch 是一个基于大语言模型的智能研究平台，通过多个 AI Agent 协作自动完成从规划、搜索、分析到撰写报告的全流程深度研究。平台同时支持智能对话、联网搜索、个人知识库检索等多种交互模式，并提供暗色/亮色主题切换。
 
 ### 核心亮点
 
 - **多 Agent 协作** — Planner、Researcher、Analyst、Writer、Reviewer 五个 Agent 自动协作，模拟人类研究流程
 - **研究流水线** — 主题规划 → 联网搜索 → 综合分析 → 报告撰写 → 质量审查，全流程自动化
-- **RAG 知识库** — 上传个人文档，通过向量检索 + 重排序技术精准回答文档相关问题
+- **RAG 知识库** — 上传个人文档，通过向量检索 + 重排序技术精准回答文档相关问题，与联网搜索隔离
 - **流式对话** — SSE 实时推送，用户即时看到 AI 回复内容
 - **记忆系统** — 闲聊和知识库对话各自拥有独立记忆，提升长对话体验
+- **暗色模式** — 支持亮色/暗色主题切换，持久化用户偏好
 
 ## 功能概览
 
 | 功能 | 说明 |
 |---|---|
 | 闲聊模式 | DeepSeek 大模型驱动，支持联网搜索（Tavily）、天气查询（和风天气）、实时时间等 Tool Calling |
-| 研究模式 | 五 Agent 协作，自动规划任务、并行搜索资料、智能分析提炼、撰写高质量报告、AI 自主审查修正 |
-| 个人文档检索 | 支持 PDF/TXT/MD/DOCX 上传，文本分块 + 阿里云百炼 Embedding + ChromaDB 向量存储 + qwen3-rerank 重排序，精准问答 |
+| 研究模式 | 五 Agent 协作（每个话题独立隔离），自动规划任务、并行搜索资料、智能分析提炼、撰写高质量报告、AI 审查修正（最多审查 2 次） |
+| 个人文档检索 | 支持 PDF/TXT/MD/DOCX 上传，文本分块 + 阿里云百炼 Embedding + ChromaDB 向量存储 + qwen3-rerank 重排序，纯文档内问答不带联网搜索 |
 | 研究方案审批 | Planner 生成大纲后由用户确认或修改，人机协作确保研究方向和深度符合预期 |
-| 实时进度反馈 | WebSocket 推送研究进度，可视化展示每个 Agent 的工作状态 |
+| 实时进度反馈 | WebSocket 推送研究进度，可视化展示每个 Agent 的工作状态，进度条严格递增 |
+| 主题切换 | 支持暗色/亮色模式，偏好自动持久化到 localStorage |
 
 ## 系统架构
 
 ```
 ┌──────────────────────────────────────────────────┐
 │                   前端 (Vue 3)                     │
-│   DaisyUI + Tailwind CSS + Pinia + Vue Router     │
+│   DaisyUI 5 + Tailwind CSS 4 + Pinia + Vue Router │
 ├──────────────────────────────────────────────────┤
 │               SSE / WebSocket / REST              │
 ├──────────────────────────────────────────────────┤
@@ -42,7 +44,7 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
 ├──────────┬──────────────────┬────────────────────┤
 │ 闲聊模式  │    研究模式        │   个人文档检索      │
 │ ChatGraph │ PlanningWorkflow  │   ChatGraph + RAG  │
-│ + ReAct   │ + ExecutionWorkflow│   + KB Tools       │
+│ + ReAct   │ + ExecutionWorkflow│   (仅 KB_Tools)   │
 ├──────────┴──────────────────┴────────────────────┤
 │               LangGraph (Agent 编排)               │
 ├──────────────────────────────────────────────────┤
@@ -68,18 +70,20 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
  Analyst ───────────► 综合分析搜索结果
     │
     ▼
- Writer ────────────► 撰写 Markdown 报告
+ Writer ────────────► 撰写报告
     │
     ▼
  Reviewer ──────────► AI 审查 + 反馈
     │                    │
-    │              passed? ── 否 ──► Writer (重写)
+    │              passed? ── 否 ──► Writer (重写 1 次) ──► Reviewer (最终审查)
     │                    │
     是                   │
     │                    ▼
     ▼               report_completed
  report_completed
 ```
+
+> 研究模式每个对话只研究一个话题；如果已有研究记录的对话中发起新研究，后端自动创建新对话隔离。
 
 ## 技术栈
 
@@ -89,10 +93,11 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
 |---|---|
 | Vue 3 | 渐进式前端框架 |
 | Vite | 构建工具 |
-| Tailwind CSS + DaisyUI | UI 组件库 |
+| Tailwind CSS 4 + DaisyUI 5 | UI 组件库 + 主题系统 |
 | Pinia | 状态管理 |
 | Vue Router | 路由 |
 | Lucide | 图标库 |
+| Croppie | 头像裁剪 |
 
 **后端**
 
@@ -127,7 +132,7 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
 ### 后端启动
 
 ```bash
-cd SmartResearchAssistant/backend
+cd AceResearch/backend
 
 # 创建并激活虚拟环境
 python -m venv .venv
@@ -148,7 +153,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ### 前端启动
 
 ```bash
-cd SmartResearchAssistant/frontend
+cd AceResearch/frontend
 
 # 安装依赖
 npm install
@@ -175,7 +180,7 @@ npm run build
 ## 项目结构
 
 ```
-SmartResearchAssistant/
+AceResearch/
 ├── backend/
 │   ├── agents/                # Agent 定义（LangGraph 图结构）
 │   │   ├── chat/              #   闲聊模式 Agent
@@ -198,11 +203,12 @@ SmartResearchAssistant/
 │       │   ├── home/          #   首页
 │       │   ├── knowledge/     #   文档管理页
 │       │   ├── report/        #   报告列表/详情
-│       │   └── user/          #   个人资料页
+│       │   └── user/          #   个人资料页（头像裁剪）
 │       ├── stores/            # Pinia 状态管理
-│       ├── components/        # 共享组件 (导航栏等)
+│       ├── js/                # HTTP 封装、工具函数、主题管理
+│       ├── components/        # 共享组件 (导航栏 + 主题切换等)
 │       ├── router/            # Vue Router 配置
-│       └── js/http/           # Axios 封装 (JWT 自动刷新)
+│       └── css/               # Tailwind/DaisyUI 配置
 ├── requirements.txt           # Python 依赖
 └── README.md
 ```
