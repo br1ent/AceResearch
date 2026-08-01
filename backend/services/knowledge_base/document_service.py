@@ -205,6 +205,8 @@ async def _process_document(doc_id: int, text: str, user_id: int):
             doc.status = "completed"
             doc.chunk_count = len(chunks)
             db.commit()
+            from services.knowledge_base.retrieval_service import invalidate_rag_cache
+            invalidate_rag_cache(user_id)
         except Exception as e:
             doc.status = "failed"
             db.commit()
@@ -233,6 +235,8 @@ def delete_document(user_id: int, doc_id: int) -> bool:
 
         db.delete(doc)
         db.commit()
+        from services.knowledge_base.retrieval_service import invalidate_rag_cache
+        invalidate_rag_cache(user_id)
         return True
     finally:
         db.close()

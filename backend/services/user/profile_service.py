@@ -27,6 +27,8 @@ class ProfileService:
 
         user.photo = f"/media/avatars/{new_name}"
         self.db.commit()
+        from utils.auth import invalidate_user_cache
+        invalidate_user_cache(user.id)
 
         return {
             "success": True,
@@ -58,6 +60,8 @@ class ProfileService:
         user.username = username
         user.email = email
         self.db.commit()
+        from utils.auth import invalidate_user_cache
+        invalidate_user_cache(user.id)
         self.db.refresh(user)
 
         return {

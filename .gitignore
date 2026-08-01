@@ -6,13 +6,13 @@ __pycache__/
 *$py.class
 *.so
 *.pyo
+.python-version
 
 # Virtual environments
 .venv/
 venv/
 ENV/
 env/
-.python-version
 
 # Distribution / packaging
 dist/
@@ -22,17 +22,44 @@ build/
 *.whl
 pip-wheel-metadata/
 
-# Environments & configs
+# ============================================
+# Environment & Config
+# ============================================
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 
 # ============================================
-# Media / Static / Knowledge Base
+# Media / Runtime Data
 # ============================================
-backend/media/
-backend/static/
+media/
+backend/media/avatars/
+
+# ============================================
+# ChromaDB (向量数据库持久化)
+# ============================================
+chroma_data/
 backend/chroma_data/
+backend/tests/chroma_data/
+
+# ============================================
+# Test Artifacts
+# ============================================
+backend/tests/eval_report.json
+backend/tests/eval_full_report.json
+backend/result.txt
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+cypress/videos/
+cypress/screenshots/
+__screenshots__/
 
 # ============================================
 # IDE / Editor
@@ -49,27 +76,17 @@ backend/chroma_data/
 *.sublime-workspace
 
 # ============================================
-# Testing / Coverage
-# ============================================
-.pytest_cache/
-.coverage
-.coverage.*
-htmlcov/
-.tox/
-.nox/
-coverage.xml
-
-# ============================================
-# Jupyter Notebook
-# ============================================
-.ipynb_checkpoints/
-
-# ============================================
 # Database
 # ============================================
 *.db
 *.sqlite3
 *.sqlite
+
+# ============================================
+# Redis
+# ============================================
+dump.rdb
+appendonly.aof
 
 # ============================================
 # Logs
@@ -84,12 +101,12 @@ logs/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+$RECYCLE.BIN/
 
 # ============================================
-# Claude / Reasonix
+# Claude / AI assistants
 # ============================================
 .claude/
-.reasonix/
 
 # ============================================
 # Frontend / Node.js
@@ -98,25 +115,18 @@ node_modules/
 dist/
 dist-ssr/
 *.local
+*.tsbuildinfo
+.eslintcache
+*.timestamp-*-*.mjs
 
-# Lock files (uncomment the one you use)
-# package-lock.json
+# Lock files（保留 package-lock.json 以锁定版本）
 # yarn.lock
 # pnpm-lock.yaml
 
-# Build artifacts
-*.tsbuildinfo
-.eslintcache
-
-# Vite
-*.timestamp-*-*.mjs
-
-# Cypress
-/cypress/videos/
-/cypress/screenshots/
-
-# Vitest
-__screenshots__/
+# ============================================
+# Jupyter Notebook
+# ============================================
+.ipynb_checkpoints/
 
 # ============================================
 # Misc
