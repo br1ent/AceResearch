@@ -47,15 +47,17 @@ def build_context_node(state: ChatState) -> dict:
     if memory_text:
         messages.append(SystemMessage(content=f"[用户画像]\n{memory_text}"))
 
-    # 历史消息（跳过最后一条，因为它是刚存入的 user_message，后面会单独加）
-    for msg in history_dicts[:-1]:
-        if msg["role"] == "user":
-            messages.append(HumanMessage(content=msg["content"]))
-        elif msg["role"] == "assistant":
-            messages.append(AIMessage(content=msg["content"]))
-
-    # 当前用户消息
-    messages.append(HumanMessage(content=state["user_message"]))
+    if mode == "knowledge":
+        # 知识库模式：不拼接历史消息，每次独立检索
+        messages.append(HumanMessage(content=state["user_message"]))
+    else:
+        # 历史消息（跳过最后一条，因为它是刚存入的 user_message，后面会单独加）
+        for msg in history_dicts[:-1]:
+            if msg["role"] == "user":
+                messages.append(HumanMessage(content=msg["content"]))
+            elif msg["role"] == "assistant":
+                messages.append(AIMessage(content=msg["content"]))
+        messages.append(HumanMessage(content=state["user_message"]))
 
     return {
         "system_prompt": system_prompt,
