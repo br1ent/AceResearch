@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from agents.research.graph import PlanningWorkflow, ExecutionWorkflow
 from config.database import SessionLocal
-from models.chat import Message
 from models.project import Report
 from utils.ws_manager import manager
 
@@ -221,6 +220,7 @@ class ResearchService:
                 state.update(await reviewer_node(state))
 
             final_report = state.get("final_report") or state.get("report_draft", "")
+            rewrite_count = state.get("reviewer_retries", 0)
 
             if final_report:
                 content = final_report
@@ -229,6 +229,7 @@ class ResearchService:
                 if report:
                     report.content = content
                     report.status = "completed"
+                    report.reviewer_rewrite_count = rewrite_count
                     db.commit()
 
                 # LLM 自动生成总结

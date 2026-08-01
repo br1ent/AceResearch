@@ -1,7 +1,7 @@
 """知识库文档服务：上传、解析、分块、向量化、存储"""
 import asyncio
 import os
-from io import BytesIO
+import re
 
 import chromadb
 import httpx
@@ -19,8 +19,6 @@ _chroma_client = chromadb.PersistentClient(path=_chroma_path)
 
 
 class DashScopeEmbedding:
-    """阿里云百炼 Embedding 封装（httpx 直调，避免 LangChain OpenAIEmbeddings 兼容问题）"""
-
     def __init__(self):
         self.api_key = kb_settings.EMBEDDING_API_KEY
         self.base_url = kb_settings.EMBEDDING_BASE_URL.rstrip("/")
@@ -51,25 +49,10 @@ def _get_collection(user_id: int):
 
 
 def _parse_file(file_data: bytes, filename: str) -> str | None:
-    """解析文件内容，返回纯文本"""
+    """解析文件内容，返回纯文本（仅支持 Markdown）"""
     ext = os.path.splitext(filename)[1].lower()
-    try:
-        if ext == ".txt" or ext == ".md":
-            return file_data.decode("utf-8", errors="replace")
-        elif ext == ".pdf":
-            import fitz
-            doc = fitz.open(stream=file_data, filetype="pdf")
-            text = ""
-            for page in doc:
-                text += page.get_text()
-            doc.close()
-            return text
-        elif ext == ".docx":
-            from docx import Document
-            doc = Document(BytesIO(file_data))
-            return "\n".join(p.text for p in doc.paragraphs)
-    except Exception:
-        return None
+    if ext in (".md", ".txt"):
+        return file_data.decode("utf-8", errors="replace")
     return None
 
 
@@ -88,9 +71,6 @@ def upload_and_process(user_id: int, file_data: bytes, filename: str) -> int | N
     text = _parse_file(file_data, filename)
     if not text:
         return None
-
-    if len(text) > kb_settings.MAX_TEXT_LENGTH:
-        text = text[:kb_settings.MAX_TEXT_LENGTH]
 
     file_type = os.path.splitext(filename)[1].lower().lstrip(".")
     file_size = len(file_data)
@@ -116,6 +96,70 @@ def upload_and_process(user_id: int, file_data: bytes, filename: str) -> int | N
     return doc_id
 
 
+def _split_markdown_semantic(text: str, max_chunk: int = 800, overlap: int = 100) -> list[str]:
+    """按 Markdown 标题语义分块，保持上下文连贯性"""
+    # 按 H2 拆分
+    h2_sections = re.split(r"\n(?=## )", text)
+
+    # 提取文档级标题（第一个 # 标题，作为全局上下文）
+    doc_title = ""
+    first_line = h2_sections[0].strip() if h2_sections else ""
+    h1_match = re.match(r"^#\s+[^#]", first_line)
+    if h1_match:
+        doc_title = first_line.split("\n")[0].strip()
+        h2_sections = h2_sections[1:] if len(h2_sections) > 1 else h2_sections
+
+    chunks: list[str] = []
+    fallback_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=max_chunk, chunk_overlap=overlap,
+        separators=["\n\n", "\n", "。", ".", " ", ""],
+    )
+
+    for section in h2_sections:
+        section = section.strip()
+        if not section:
+            continue
+
+        # 提取 H2 标题
+        h2_title = ""
+        lines = section.split("\n")
+        if lines and lines[0].startswith("## "):
+            h2_title = lines[0].strip()
+
+        # 如果 section 本身很短，直接作为一个 chunk
+        if len(section) <= max_chunk:
+            prefix = f"{doc_title}\n" if doc_title else ""
+            chunks.append(f"{prefix}{section}")
+            continue
+
+        # 长 section：按 H3 细分
+        sub_parts = re.split(r"\n(?=### )", section)
+        for part in sub_parts:
+            part = part.strip()
+            if not part:
+                continue
+
+            if len(part) <= max_chunk:
+                prefix = f"{doc_title}\n" if doc_title else ""
+                chunks.append(f"{prefix}{part}")
+            else:
+                # 仍然过长，用 RecursiveCharacterTextSplitter 兜底
+                prefix = f"{doc_title}\n" if doc_title else ""
+                sub_chunks = fallback_splitter.split_text(part)
+                for sc in sub_chunks:
+                    chunks.append(f"{prefix}{sc}")
+
+    # 合并相邻短 chunk（避免碎片化）
+    merged: list[str] = []
+    for ch in chunks:
+        if merged and len(merged[-1]) + len(ch) < max_chunk * 0.7:
+            merged[-1] = merged[-1] + "\n\n" + ch
+        else:
+            merged.append(ch)
+
+    return merged if merged else [text[:max_chunk]]
+
+
 async def _process_document(doc_id: int, text: str, user_id: int):
     """后台处理：分块、向量化、存储"""
     db = SessionLocal()
@@ -125,12 +169,11 @@ async def _process_document(doc_id: int, text: str, user_id: int):
             return
 
         try:
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=kb_settings.CHUNK_SIZE,
-                chunk_overlap=kb_settings.CHUNK_OVERLAP,
-                separators=["\n\n", "\n", "。", ".", " ", ""],
+            chunks = _split_markdown_semantic(
+                text,
+                max_chunk=kb_settings.CHUNK_SIZE,
+                overlap=kb_settings.CHUNK_OVERLAP,
             )
-            chunks = splitter.split_text(text)
 
             if not chunks:
                 doc.status = "completed"
@@ -145,9 +188,9 @@ async def _process_document(doc_id: int, text: str, user_id: int):
                 chunk_metas.append({"document_id": str(doc_id), "title": doc.title})
                 chunk_ids.append(f"doc_{doc_id}_chunk_{i}")
 
-            # 批量向量化（每次最多 20 条，避免超时）
+            # 批量向量化（API 限制每次最多 10 条）
             all_embeddings = []
-            batch_size = 20
+            batch_size = 10
             for i in range(0, len(chunks), batch_size):
                 batch = chunks[i:i + batch_size]
                 all_embeddings.extend(embeddings.embed_documents(batch))

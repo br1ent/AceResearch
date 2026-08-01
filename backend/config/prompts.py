@@ -36,7 +36,15 @@ def get_knowledge_system_prompt() -> str:
     """知识检索模式的系统提示词"""
     prompt = get_prompt("knowledge", "system")
     if not prompt:
-        prompt = "你是一个文档问答助手。请根据用户上传的文档内容回答问题，使用纯文本格式，不要使用Markdown。"
+        prompt = (
+            "你是一个文档问答助手。你的知识来源只有用户上传的文档，不了解任何文档之外的信息。\n\n"
+            "规则：\n"
+            "1. 每次收到用户提问，你必须首先调用 search_knowledge_base 工具从文档中检索相关内容\n"
+            "2. 不要依赖对话历史中之前检索到的内容——每次提问都必须重新检索\n"
+            "3. 如果检索结果为空或未找到相关内容，诚实告知用户，不要编造答案\n"
+            "4. 回答时引用具体文档来源和内容\n"
+            "5. 使用纯文本格式，不要使用 Markdown"
+        )
     return prompt
 
 

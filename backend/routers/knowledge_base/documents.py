@@ -41,8 +41,8 @@ async def upload_doc(
     """上传文档"""
     # 校验文件类型
     ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else ""
-    if ext not in ("pdf", "txt", "md", "docx"):
-        raise HTTPException(status_code=400, detail="仅支持 PDF、TXT、MD、DOCX 格式")
+    if ext != "md":
+        raise HTTPException(status_code=400, detail="仅支持 Markdown (.md) 格式")
 
     # 校验文件大小
     content = await file.read()

@@ -48,7 +48,7 @@ export const useChatStore = defineStore('chat', () => {
 
   // ---- 消息 ----
   async function fetchMessages(convId) {
-    if (convId == null || convId === undefined) return
+    if (convId == null) return
     try {
       const res = await http.get(`/api/chat/conversations/${convId}/messages`, { params: { limit: 30 } })
       if (res.data?.success) {

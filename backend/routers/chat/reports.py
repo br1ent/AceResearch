@@ -31,6 +31,7 @@ def list_reports(
                 "id": r.id,
                 "title": r.title,
                 "status": r.status,
+                "reviewer_rewrite_count": r.reviewer_rewrite_count,
                 "created_at": r.create_at.isoformat() if r.create_at else None,
             }
             for r in reports
@@ -83,6 +84,7 @@ def get_report_detail(
             "title": report.title,
             "content": report.content,
             "status": report.status,
+            "reviewer_rewrite_count": report.reviewer_rewrite_count,
             "created_at": report.create_at.isoformat() if report.create_at else None,
             },
         }

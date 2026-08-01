@@ -21,6 +21,9 @@ class Report(Base):
     status: Mapped[str] = mapped_column(
         String(20), default="draft", comment="状态: generating / draft / completed / failed"
     )
+    reviewer_rewrite_count: Mapped[int] = mapped_column(
+        Integer, default=0, comment="Reviewer 触发重写次数"
+    )
 
     def __repr__(self) -> str:
         return f"<Report {self.id} title={self.title} status={self.status}>"

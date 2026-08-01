@@ -12,22 +12,27 @@ def _rerank(query: str, documents: list[str]) -> list[dict] | None:
     if not kb_settings.RERANK_WORKSPACE_ID or not documents:
         return None
 
-    url = f"https://{kb_settings.RERANK_WORKSPACE_ID}.cn-beijing.maas.aliyuncs.com/compatible-api/v1/reranks"
+    url = "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank"
     try:
         resp = httpx.post(
             url,
             json={
                 "model": kb_settings.RERANK_MODEL,
-                "query": query,
-                "documents": documents,
-                "top_n": kb_settings.RERANK_TOP_N,
+                "input": {
+                    "query": query,
+                    "documents": documents,
+                },
+                "parameters": {
+                    "top_n": kb_settings.RERANK_TOP_N,
+                    "return_documents": True,
+                },
             },
             headers={"Authorization": f"Bearer {kb_settings.EMBEDDING_API_KEY}"},
             timeout=30.0,
         )
         if resp.status_code == 200:
             data = resp.json()
-            results = data.get("results", [])
+            results = data.get("output", {}).get("results", [])
             sorted_results = sorted(results, key=lambda r: r.get("relevance_score", 0), reverse=True)
             return sorted_results
     except Exception as e:
@@ -43,8 +48,8 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
         if collection.count() == 0:
             return "知识库中没有文档内容"
 
-        # 向量召回（多召回一些候选，给重排序留空间）
-        recall_k = min(top_k * 2, collection.count(), 10)
+        # 向量召回（固定 10 条候选）
+        recall_k = min(collection.count(), kb_settings.RECALL_K)
         query_embedding = embeddings.embed_query(query)
         results = collection.query(
             query_embeddings=[query_embedding],
@@ -65,15 +70,15 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
             for i, item in enumerate(reranked, 1):
                 idx = item.get("index", i - 1)
                 title = metas[idx].get("title", "未知文档") if idx < len(metas) else "未知文档"
-                content = docs[idx] if idx < len(docs) else ""
-                lines.append(f"[来源 {i}] 文档：{title}\n内容：{content[:500]}")
+                content = item.get("document", {}).get("text", docs[idx] if idx < len(docs) else "")
+                lines.append(f"[来源 {i}] 文档：{title}\n内容：{content}")
             return "\n\n".join(lines)
 
-        # 重排序不可用，用原始向量距离排序
+        # 重排序不可用，用原始向量距离排序（仅返回 top-3）
         lines = []
-        for i, (doc, meta) in enumerate(zip(docs, metas), 1):
+        for i, (doc, meta) in enumerate(zip(docs[:top_k], metas[:top_k]), 1):
             title = meta.get("title", "未知文档")
-            lines.append(f"[来源 {i}] 文档：{title}\n内容：{doc[:500]}")
+            lines.append(f"[来源 {i}] 文档：{title}\n内容：{doc}")
         return "\n\n".join(lines)
     except Exception as e:
         return f"知识库检索失败：{e}"

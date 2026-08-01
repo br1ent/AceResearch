@@ -21,7 +21,7 @@ class KnowledgeBaseSettings(BaseSettings):
     CHUNK_OVERLAP: int = 100
     MAX_DOCUMENTS_PER_USER: int = 3
     MAX_FILE_SIZE_MB: int = 5
-    MAX_TEXT_LENGTH: int = 1000
+    RECALL_K: int = 10
 
 
 @lru_cache

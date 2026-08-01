@@ -31,8 +31,8 @@ async function onFileChange(e) {
 async function handleFile(file) {
   error.value = ''
   const ext = file.name.split('.').pop()?.toLowerCase()
-  if (!['pdf', 'txt', 'md', 'docx'].includes(ext)) {
-    error.value = '仅支持 PDF、TXT、MD、DOCX 格式'
+  if (ext !== 'md') {
+    error.value = '仅支持 Markdown (.md) 格式'
     return
   }
   if (store.documents.length >= 3) {
@@ -46,9 +46,7 @@ async function handleFile(file) {
   }
 }
 
-function fileIcon(type) {
-  if (type === 'pdf') return 'text-red-500'
-  if (type === 'docx') return 'text-blue-500'
+function fileIcon(_type) {
   return 'text-base-content/60'
 }
 </script>
@@ -72,7 +70,7 @@ function fileIcon(type) {
     >
       <input
         type="file"
-        accept=".pdf,.txt,.md,.docx"
+        accept=".md"
         class="hidden"
         ref="fileInput"
         @change="onFileChange"
@@ -88,15 +86,9 @@ function fileIcon(type) {
           <p class="text-base-content/70">
             {{ store.documents.length >= 3 ? '已达到上传上限（3 份）' : '拖拽或点击上传文档' }}
           </p>
-          <p class="text-xs text-base-content/40 mt-1">支持 PDF / TXT / MD / DOCX</p>
+          <p class="text-xs text-base-content/40 mt-1">支持 Markdown (.md) 格式</p>
         </div>
       </div>
-    </div>
-
-    <!-- 字数提示 -->
-    <div v-if="store.documents.length < 3" class="flex items-center gap-2 mb-6 text-xs text-warning/80">
-      <AlertTriangle class="w-3.5 h-3.5" />
-      <span>文档内容超过 5000 字部分将被自动截断，请注意字数</span>
     </div>
 
     <!-- 错误 -->

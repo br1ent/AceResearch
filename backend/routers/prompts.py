@@ -18,7 +18,6 @@ class PromptUpdate(BaseModel):
 @router.get("")
 def list_prompts(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
     """获取所有提示词"""
     prompts = db.query(AgentPrompt).order_by(AgentPrompt.mode, AgentPrompt.stage).all()
