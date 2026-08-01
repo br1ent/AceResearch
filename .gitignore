@@ -50,6 +50,7 @@ backend/tests/chroma_data/
 backend/tests/eval_report.json
 backend/tests/eval_rag.json
 backend/tests/eval_rewrite.json
+backend/tests/rag_evaluation_report.json
 backend/result.txt
 .pytest_cache/
 .coverage

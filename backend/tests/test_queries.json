@@ -1,0 +1,49 @@
+[
+  {"query": "后端使用什么Python框架", "category": "architecture", "relevant_keywords": ["FastAPI"]},
+  {"query": "后端服务运行在什么Web服务器上", "category": "architecture", "relevant_keywords": ["Uvicorn"]},
+  {"query": "数据持久化使用什么数据库", "category": "architecture", "relevant_keywords": ["MySQL"]},
+  {"query": "数据库操作使用了什么ORM框架", "category": "architecture", "relevant_keywords": ["SQLAlchemy"]},
+  {"query": "数据库驱动是什么", "category": "architecture", "relevant_keywords": ["PyMySQL"]},
+  {"query": "数据库名和字符集分别是什么", "category": "architecture", "relevant_keywords": ["smart_research", "utf8mb4"]},
+  {"query": "前端使用什么构建工具", "category": "architecture", "relevant_keywords": ["Vite"]},
+  {"query": "前端开发端口是多少", "category": "architecture", "relevant_keywords": ["5173"]},
+
+  {"query": "用户密码是如何加密存储的", "category": "auth", "relevant_keywords": ["BCrypt", "哈希"]},
+  {"query": "JWT签名算法是什么", "category": "auth", "relevant_keywords": ["HS256"]},
+  {"query": "Access Token有效期是多久", "category": "auth", "relevant_keywords": ["30", "分钟"]},
+  {"query": "Refresh Token能保持几天登录", "category": "auth", "relevant_keywords": ["7", "天"]},
+  {"query": "退出登录后Token为什么立即失效", "category": "auth", "relevant_keywords": ["Redis", "白名单"]},
+
+  {"query": "大语言模型使用的是哪一家的", "category": "model", "relevant_keywords": ["DeepSeek"]},
+  {"query": "默认模型名称是什么", "category": "model", "relevant_keywords": ["deepseek-v4-flash"]},
+  {"query": "嵌入模型与重排序模型分别是什么", "category": "model", "relevant_keywords": ["text-embedding-v4", "qwen3-rerank"]},
+  {"query": "嵌入向量维度是多少", "category": "model", "relevant_keywords": ["1024"]},
+  {"query": "最大输出Token数是多少", "category": "model", "relevant_keywords": ["8192"]},
+  {"query": "Planner和Writer的温度参数分别是多少", "category": "model", "relevant_keywords": ["0.5", "0.6"]},
+  {"query": "对话模式的温度参数是多少", "category": "model", "relevant_keywords": ["0.7"]},
+
+  {"query": "深度研究流水线由哪几个Agent协作完成", "category": "agent", "relevant_keywords": ["Planner", "Researcher", "Analyst", "Writer", "Reviewer"]},
+  {"query": "Reviewer最多允许几次重写", "category": "agent", "relevant_keywords": ["Reviewer", "重写", "2"]},
+  {"query": "每个研究子任务最多返回几条搜索结果", "category": "agent", "relevant_keywords": ["5", "搜索结果"]},
+  {"query": "对话模式的工具调用最多迭代几次", "category": "agent", "relevant_keywords": ["5", "迭代"]},
+
+  {"query": "上传的文档是如何做语义分块的", "category": "rag", "relevant_keywords": ["语义分块", "标题", "Markdown"]},
+  {"query": "分块大小与重叠分别是多少", "category": "rag", "relevant_keywords": ["800", "100"]},
+  {"query": "向量召回多少条候选", "category": "rag", "relevant_keywords": ["10", "召回"]},
+  {"query": "重排序后最终返回几条", "category": "rag", "relevant_keywords": ["3", "重排序"]},
+  {"query": "知识库向量存储在什么数据库", "category": "rag", "relevant_keywords": ["ChromaDB"]},
+  {"query": "不同用户的知识库是如何隔离的", "category": "rag", "relevant_keywords": ["collection", "隔离"]},
+  {"query": "知识库模式为什么每轮都要独立检索", "category": "rag", "relevant_keywords": ["独立检索", "历史"]},
+  {"query": "支持上传哪些文件格式", "category": "rag", "relevant_keywords": ["Markdown", "md"]},
+  {"query": "每个用户最多上传几份文档", "category": "rag", "relevant_keywords": ["3份", "3 份"]},
+  {"query": "单份文档大小上限是多少", "category": "rag", "relevant_keywords": ["5MB"]},
+  {"query": "相同问题第二次为什么能更快回答", "category": "rag", "relevant_keywords": ["Redis", "缓存"]},
+
+  {"query": "系统的Redis缓存分为哪几层", "category": "cache", "relevant_keywords": ["Token白名单", "用户缓存", "RAG缓存"]},
+  {"query": "用户信息缓存的过期时间是多少", "category": "cache", "relevant_keywords": ["5 分钟", "5分钟"]},
+  {"query": "联网搜索使用哪个搜索引擎", "category": "cache", "relevant_keywords": ["Tavily"]},
+  {"query": "天气查询使用哪家服务", "category": "cache", "relevant_keywords": ["和风天气", "QWeather"]},
+
+  {"query": "前端UI使用了哪些技术", "category": "frontend", "relevant_keywords": ["Vue 3", "Tailwind", "DaisyUI"]},
+  {"query": "前端状态管理和路由用什么", "category": "frontend", "relevant_keywords": ["Pinia", "Vue Router"]}
+]
