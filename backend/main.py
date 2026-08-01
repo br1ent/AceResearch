@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from config.settings import get_settings
@@ -45,9 +45,11 @@ app.mount("/media", StaticFiles(directory="media"), name="media")
 async def favicon():
     return FileResponse(str(FRONTEND_DIST / "favicon.ico"))
 
-# SPA 兜底：未匹配路径返回 index.html
+# SPA 兜底：未匹配路径返回 index.html（跳过 api/ws 前缀）
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
+    if full_path.startswith("api/") or full_path.startswith("ws/"):
+        raise HTTPException(status_code=404)
     return FileResponse(str(FRONTEND_DIST / "index.html"))
 
 

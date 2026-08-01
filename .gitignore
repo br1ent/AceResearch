@@ -48,7 +48,8 @@ backend/tests/chroma_data/
 # Test Artifacts
 # ============================================
 backend/tests/eval_report.json
-backend/tests/eval_full_report.json
+backend/tests/eval_rag.json
+backend/tests/eval_rewrite.json
 backend/result.txt
 .pytest_cache/
 .coverage
