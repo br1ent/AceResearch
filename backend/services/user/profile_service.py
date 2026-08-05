@@ -4,8 +4,17 @@ import uuid
 from sqlalchemy.orm import Session
 
 from models.user import User
+from config.settings import get_settings
 
+settings = get_settings()
 AVATAR_DIR = "media/avatars"
+
+
+def _photo_url(photo: str) -> str:
+    """将相对路径转为完整 URL，供 API 返回给前端"""
+    if photo and photo.startswith("/"):
+        return f"{settings.BASE_URL}{photo}"
+    return photo
 
 
 class ProfileService:
@@ -32,7 +41,7 @@ class ProfileService:
 
         return {
             "success": True,
-            "data": {"photo": user.photo},
+            "data": {"photo": _photo_url(user.photo)},
         }
 
     def update_profile(self, user: User, username: str, email: str) -> dict:
@@ -70,8 +79,6 @@ class ProfileService:
                 "id": str(user.id),
                 "username": user.username,
                 "email": user.email,
-                "photo": user.photo,
-                "create_at": user.create_at.isoformat() if user.create_at else None,
-                "update_at": user.update_at.isoformat() if user.update_at else None,
+                "photo": _photo_url(user.photo),
             },
         }

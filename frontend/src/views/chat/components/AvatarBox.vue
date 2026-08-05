@@ -11,18 +11,15 @@ const userStore = useUserStore()
 
 const photoUrl = computed(() => {
   if (props.role !== 'user') return ''
-  const p = userStore.photo
-  if (!p) return ''
-  if (p.startsWith('http')) return p
-  return 'http://localhost:8000' + p
+  return userStore.photo || ''
 })
 
 const initial = computed(() => {
   return userStore.username?.charAt(0)?.toUpperCase() || 'U'
 })
 
-// AI 头像（放到后端 media/ 目录下）
-const aiAvatar = 'http://localhost:8000/media/ai-avatar.png'
+// AI 头像
+const aiAvatar = '/media/ai-avatar.png'
 </script>
 
 <template>

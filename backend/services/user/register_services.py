@@ -3,6 +3,15 @@ from sqlalchemy.orm import Session
 from models.user import User
 from schemas.user.register import UserRegister
 from utils.auth import hash_password
+from config.settings import get_settings
+
+settings = get_settings()
+
+
+def _photo_url(photo: str) -> str:
+    if photo and photo.startswith("/"):
+        return f"{settings.BASE_URL}{photo}"
+    return photo
 
 
 class RegisterServices:
@@ -45,6 +54,6 @@ class RegisterServices:
                 "id": str(user.id),
                 "username": user.username,
                 "email": user.email,
-                "photo": user.photo,
+                "photo": _photo_url(user.photo),
             },
         }

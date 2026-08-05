@@ -3,6 +3,15 @@ from sqlalchemy.orm import Session
 from models.user import User
 from schemas.user.login import UserLogin
 from utils.auth import verify_password, create_access_token, create_refresh_token
+from config.settings import get_settings
+
+settings = get_settings()
+
+
+def _photo_url(photo: str) -> str:
+    if photo and photo.startswith("/"):
+        return f"{settings.BASE_URL}{photo}"
+    return photo
 
 
 class LoginService:
@@ -36,7 +45,7 @@ class LoginService:
                     "id": str(user.id),
                     "email": user.email,
                     "username": user.username,
-                    "photo": user.photo,
+                    "photo": _photo_url(user.photo),
                 }
             }
         }
