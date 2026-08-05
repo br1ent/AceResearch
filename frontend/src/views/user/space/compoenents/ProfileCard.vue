@@ -3,8 +3,6 @@ import { ref, reactive, computed } from 'vue'
 import {
   Mail,
   User,
-  Calendar,
-  Clock,
   Lock,
   Pencil,
   Check,
@@ -57,18 +55,9 @@ async function saveProfile() {
   saving.value = false
 }
 
-function formatTime(isoStr) {
-  if (!isoStr) return '-'
-  const d = new Date(isoStr)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
-
 const fields = computed(() => [
   { icon: User, label: '用户名', value: userStore.username, key: 'username', editable: true },
   { icon: Mail, label: '邮箱', value: userStore.email, key: 'email', editable: true },
-  { icon: Calendar, label: '创建时间', value: formatTime(userStore.createAt), key: 'createAt', editable: false },
-  { icon: Clock, label: '更新时间', value: formatTime(userStore.updateAt), key: 'updateAt', editable: false },
 ])
 </script>
 

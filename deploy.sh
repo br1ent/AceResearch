@@ -6,12 +6,13 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVER="brent@114.55.0.227"
 REMOTE_DIR="/home/brent/AceResearch"
 
 echo "=== 1. 构建前端 ==="
 if [ "$1" = "--frontend" ]; then
-    cd "$(dirname "$0")/frontend"
+    cd "$SCRIPT_DIR/frontend"
     npm run build
     cd ..
 else
@@ -20,21 +21,22 @@ fi
 
 echo ""
 echo "=== 2. 同步后端代码 ==="
-rsync -avz --delete \
+cd "$SCRIPT_DIR/backend"
+tar czf - \
     --exclude='__pycache__' \
     --exclude='*.pyc' \
     --exclude='.venv' \
     --exclude='.env' \
     --exclude='chroma_data' \
     --exclude='.git' \
-    backend/ \
-    "$SERVER:$REMOTE_DIR/backend/"
+    . | ssh "$SERVER" "cd $REMOTE_DIR/backend && tar xzf -"
+echo "后端同步完成"
 
 echo ""
 echo "=== 3. 同步前端 dist ==="
-rsync -avz --delete \
-    frontend/dist/ \
-    "$SERVER:$REMOTE_DIR/frontend/dist/"
+cd "$SCRIPT_DIR/frontend"
+tar czf - dist/ | ssh "$SERVER" "cd $REMOTE_DIR/frontend && tar xzf -"
+echo "前端同步完成"
 
 echo ""
 echo "=== 4. 重启服务 ==="
