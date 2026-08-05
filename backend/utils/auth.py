@@ -26,7 +26,7 @@ def _cache_user(user) -> None:
     import json
     photo = user.photo or ""
     if photo.startswith("/"):
-        photo = f"http://localhost:8000{photo}"
+        photo = f"{settings.BASE_URL}{photo}"
     _redis.setex(
         f"user:{user.id}",
         300,

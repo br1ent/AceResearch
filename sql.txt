@@ -1,0 +1,111 @@
+create table agent_prompts
+(
+    id          int auto_increment comment '提示词ID'
+        primary key,
+    mode        varchar(20)  not null comment '模式: chat / research',
+    stage       varchar(30)  not null comment '阶段: system / planner / researcher / analyst / writer / reviewer',
+    content     text         not null comment '提示词内容',
+    description varchar(200) null comment '说明（方便识别）',
+    create_at   datetime     not null comment '创建时间',
+    update_at   datetime     not null comment '更新时间'
+);
+
+create table users
+(
+    id            int auto_increment comment '用户id'
+        primary key,
+    email         varchar(50)  not null comment '邮箱',
+    username      varchar(20)  not null comment '用户名',
+    password_hash varchar(100) not null comment '用户加密的密码',
+    photo         varchar(100) not null comment '用户头像的url',
+    create_at     datetime     not null comment '创建时间',
+    update_at     datetime     not null comment '更新时间',
+    memory        text         null comment '用户记忆JSON',
+    kb_memory     text         null comment 'kb_memory',
+    constraint email
+        unique (email),
+    constraint username
+        unique (username)
+);
+
+create table conversations
+(
+    id        int auto_increment comment '对话ID'
+        primary key,
+    user_id   int                            not null comment '所属用户ID',
+    title     varchar(100)                   not null comment '对话标题',
+    create_at datetime                       not null comment '创建时间',
+    update_at datetime                       not null comment '更新时间',
+    mode      varchar(20) default 'research' not null comment '模式: chat / research',
+    constraint conversations_ibfk_1
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create index user_id
+    on conversations (user_id);
+
+create table knowledge_documents
+(
+    id          int auto_increment
+        primary key,
+    user_id     int          not null comment '用户ID',
+    title       varchar(200) not null comment '文件名',
+    file_type   varchar(10)  not null comment '文件类型: pdf/txt/md/docx',
+    file_size   int          not null comment '文件大小(字节)',
+    chunk_count int          not null comment '分块数',
+    status      varchar(16)  not null comment '状态: processing/completed/failed',
+    create_at   datetime     not null comment '创建时间',
+    update_at   datetime     not null comment '更新时间',
+    constraint knowledge_documents_ibfk_1
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create index user_id
+    on knowledge_documents (user_id);
+
+create table messages
+(
+    id              int auto_increment comment '消息ID'
+        primary key,
+    conversation_id int           not null comment '所属对话ID',
+    user_id         int default 0 not null comment '所属用户ID',
+    role            varchar(20)   not null comment '角色: user / assistant / system',
+    content         text          not null comment '消息内容',
+    msg_type        varchar(30)   not null comment '消息类型: text / agent_status / search_result / report / error',
+    metadata_json   text          null comment '附加元数据(JSON)',
+    create_at       datetime      not null comment '创建时间',
+    update_at       datetime      not null comment '更新时间',
+    constraint messages_ibfk_1
+        foreign key (conversation_id) references conversations (id)
+            on delete cascade,
+    constraint messages_ibfk_2
+        foreign key (user_id) references users (id)
+            on delete cascade
+);
+
+create index conversation_id
+    on messages (conversation_id);
+
+create index user_id
+    on messages (user_id);
+
+create table reports
+(
+    id                     int auto_increment comment '报告ID'
+        primary key,
+    conversation_id        int           not null comment '所属对话ID',
+    title                  varchar(200)  not null comment '报告标题',
+    content                text          not null comment '报告内容(Markdown)',
+    status                 varchar(20)   not null comment '状态: generating / draft / completed / failed',
+    create_at              datetime      not null comment '创建时间',
+    update_at              datetime      not null comment '更新时间',
+    reviewer_rewrite_count int default 0 null,
+    constraint reports_ibfk_1
+        foreign key (conversation_id) references conversations (id)
+            on delete cascade
+);
+
+create index conversation_id
+    on reports (conversation_id);
