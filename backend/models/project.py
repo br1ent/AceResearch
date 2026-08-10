@@ -24,6 +24,9 @@ class Report(Base):
     reviewer_rewrite_count: Mapped[int] = mapped_column(
         Integer, default=0, comment="Reviewer 触发重写次数"
     )
+    review_log: Mapped[str | None] = mapped_column(
+        Text, nullable=True, comment="审查日志 JSON"
+    )
 
     def __repr__(self) -> str:
         return f"<Report {self.id} title={self.title} status={self.status}>"

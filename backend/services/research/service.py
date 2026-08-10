@@ -189,13 +189,16 @@ class ResearchService:
 
             report = db.query(Report).filter(Report.id == report_id).first()
             topic = report.title if report else ""
+            report_title = report.title if report else ""
 
             state = {
                 "topic": topic, "user_id": user_id, "conversation_id": conversation_id,
                 "outline": outline, "subtasks": subtasks,
                 "search_results": [], "analysis": "",
-                "report_title": "", "report_draft": "", "final_report": "",
-                "status": "running", "progress": 25.0, "error": None, "reviewer_retries": 0, "reviewer_feedback": None,
+                "report_title": report_title, "report_draft": "", "final_report": "",
+                "status": "running", "progress": 25.0, "error": None,
+                "reviewer_retries": 0, "reviewer_feedback": None,
+                "review_score": None, "review_history": [],
             }
 
             await agent_broadcast("researcher", "正在搜索研究资料", f"共 {len(subtasks)} 个子任务，并行搜索中...", 30)
@@ -213,11 +216,18 @@ class ResearchService:
             await agent_broadcast("reviewer", "正在审查报告质量", "从完整性、准确性、深度等维度评分...", 82)
             from agents.research.nodes.reviewer import reviewer_node
             state.update(await reviewer_node(state))
+            # 附带审查分数
+            review_score = state.get("review_score")
+            if review_score is not None:
+                await agent_broadcast("reviewer", f"审查评分: {review_score} 分", "评估完成", 84)
             if state["status"] != "completed":
-                await agent_broadcast("writer", "正在根据审查意见修改报告", "优化内容...", 88)
+                await agent_broadcast("writer", "正在根据审查意见修改报告", f"第 {state.get('reviewer_retries', 0)} 次修改...", 88)
                 state.update(await writer_node(state))
                 await agent_broadcast("reviewer", "正在再次审查报告", "最终质量检查...", 95)
                 state.update(await reviewer_node(state))
+                review_score = state.get("review_score")
+                if review_score is not None:
+                    await agent_broadcast("reviewer", f"最终评分: {review_score} 分", "审查完成", 97)
 
             final_report = state.get("final_report") or state.get("report_draft", "")
             rewrite_count = state.get("reviewer_retries", 0)
@@ -230,6 +240,9 @@ class ResearchService:
                     report.content = content
                     report.status = "completed"
                     report.reviewer_rewrite_count = rewrite_count
+                    history = state.get("review_history", [])
+                    if history:
+                        report.review_log = json.dumps(history, ensure_ascii=False)
                     db.commit()
 
                 # LLM 自动生成总结
@@ -247,6 +260,8 @@ class ResearchService:
                     "report_id": report_id,
                     "progress": 100,
                     "summary": summary,
+                    "review_score": state.get("review_score"),
+                    "rewrite_count": rewrite_count,
                 })
             else:
                 error = state.get("error", "未知错误")

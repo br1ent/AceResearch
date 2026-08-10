@@ -33,6 +33,9 @@ def _make_initial_state(topic: str, user_id: int, conversation_id: int) -> Resea
         "progress": 0.0,
         "error": None,
         "reviewer_retries": 0,
+        "reviewer_feedback": None,
+        "review_score": None,
+        "review_history": [],
     }
 
 

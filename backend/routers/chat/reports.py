@@ -67,6 +67,7 @@ def get_report_detail(
     current_user: User = Depends(get_current_user),
 ):
     """获取报告详情"""
+    import json as _json
     from models.chat import Conversation
     report = (
         db.query(Report)
@@ -77,6 +78,13 @@ def get_report_detail(
     if not report:
         raise HTTPException(status_code=404, detail="报告不存在")
 
+    review_log = None
+    if report.review_log:
+        try:
+            review_log = _json.loads(report.review_log)
+        except _json.JSONDecodeError:
+            review_log = None
+
     return {
         "success": True,
         "data": {
@@ -85,6 +93,7 @@ def get_report_detail(
             "content": report.content,
             "status": report.status,
             "reviewer_rewrite_count": report.reviewer_rewrite_count,
+            "review_log": review_log,
             "created_at": report.create_at.isoformat() if report.create_at else None,
             },
         }

@@ -1,6 +1,7 @@
 """Reviewer Agent：审查报告质量，决定是否通过或需要修改"""
 import json
 import re
+from datetime import datetime, timezone
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -8,6 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from config.agents import get_agent_settings
 from config.prompts import get_research_prompt
 from agents.research.state import ResearchState
+from utils.logger import review_logger
 
 settings = get_agent_settings()
 
@@ -77,7 +79,11 @@ async def _extract_json(text: str) -> dict | None:
 
 async def reviewer_node(state: ResearchState) -> dict:
     """审查节点：评估报告质量"""
+    report_title = state.get("report_title", "未知标题")
+    retries = state.get("reviewer_retries", 0)
+
     if not state.get("report_draft"):
+        review_logger.error("报告草稿为空，无法审查 | 标题: {}", report_title)
         return {"final_report": "报告生成失败", "status": "failed", "error": "报告草稿为空"}
 
     outline_text = "\n".join(f"- {s}" for s in state["outline"])
@@ -92,59 +98,126 @@ async def reviewer_node(state: ResearchState) -> dict:
 
     chain = prompt | llm
     response = await chain.ainvoke({
-        "title": state["report_title"],
+        "title": report_title,
         "outline": outline_text,
         "report": state["report_draft"][:8000],
     })
 
     review = await _extract_json(response.content)
 
-    # 解析失败或 LLM 无法修复 → 强制触发重写
+    # 解析失败 → 强制触发重写
     if review is None:
-        retries = state.get("reviewer_retries", 0)
+        review_logger.warning(
+            "第 {} 次审查 | JSON 解析失败 | 标题: {} | 原始输出前200字: {}",
+            retries + 1, report_title, response.content[:200],
+        )
         if retries < settings.REVIEWER_MAX_RETRIES:
+            history = list(state.get("review_history", []))
+            history.append({
+                "attempt": retries + 1,
+                "passed": False,
+                "score": None,
+                "issues": ["JSON 解析失败"],
+                "suggestions": "请重新生成格式规范的报告",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
             return {
                 "reviewer_retries": retries + 1,
                 "status": "reviewing",
                 "progress": 85.0,
+                "review_score": None,
+                "review_history": history,
                 "reviewer_feedback": "JSON 解析失败，请重新生成格式规范的报告",
             }
         else:
-            # 重试耗尽，只能放行
+            review_logger.warning("重试耗尽 ({}次)，放行报告 | 标题: {}", retries + 1, report_title)
             return {
                 "final_report": state["report_draft"],
                 "status": "completed",
                 "progress": 100.0,
             }
 
-    retries = state.get("reviewer_retries", 0)
+    passed = review.get("passed", False)
 
-    if review.get("passed", False):
+    # 评分：优先从 scores 字典取平均值，否则取 score 字段
+    scores_dict = review.get("scores")
+    if isinstance(scores_dict, dict) and scores_dict:
+        score = round(sum(scores_dict.values()) / len(scores_dict), 1)
+    else:
+        score = review.get("score")
+
+    # 问题列表：prompt 可能用 improvements 或 issues
+    issues = review.get("improvements") or review.get("issues") or []
+    if not isinstance(issues, list):
+        issues = [str(issues)]
+
+    # 建议/总结：prompt 可能用 summary 或 suggestions
+    suggestions = review.get("summary") or review.get("suggestions") or ""
+
+    history = list(state.get("review_history", []))
+    history.append({
+        "attempt": retries + 1,
+        "passed": passed,
+        "score": score,
+        "scores": scores_dict if isinstance(scores_dict, dict) else None,
+        "issues": issues,
+        "suggestions": suggestions,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
+
+    # 阈值覆盖：分数达标但 LLM 判不通过时，强制放行
+    threshold = settings.REVIEWER_PASS_THRESHOLD
+    if not passed and score is not None and threshold > 0 and score >= threshold:
+        passed = True
+        review_logger.info(
+            "第 {} 次审查 | LLM 判未通过 但分数 {} >= 阈值 {}，覆盖为通过 | 标题: {}",
+            retries + 1, score, threshold, report_title,
+        )
+
+    if passed:
+        subs = f" 子项: {scores_dict}" if isinstance(scores_dict, dict) else ""
+        sug = f" | 评价: {suggestions}" if suggestions else ""
+        review_logger.info(
+            "第 {} 次审查 | 通过 | 分数: {} |{}{} 标题: {}",
+            retries + 1, score, subs, sug, report_title,
+        )
         return {
             "final_report": state["report_draft"],
             "status": "completed",
             "progress": 100.0,
+            "review_score": score,
+            "review_history": history,
         }
-    elif retries < settings.REVIEWER_MAX_RETRIES:
-        # 把审查建议传给 Writer
-        issues = review.get("issues", [])
-        suggestions = review.get("suggestions", "")
-        if isinstance(issues, list):
-            feedback_text = "问题列表：\n" + "\n".join(f"- {i}" for i in issues)
-        else:
-            feedback_text = f"问题：{issues}"
-        if suggestions:
-            feedback_text += f"\n\n改进建议：{suggestions}"
 
+    # 未通过
+    feedback_text = "问题列表：\n" + "\n".join(f"- {i}" for i in issues)
+    if suggestions:
+        feedback_text += f"\n\n改进建议：{suggestions}"
+
+    if retries < settings.REVIEWER_MAX_RETRIES:
+        subs = f" 子项: {scores_dict}" if isinstance(scores_dict, dict) else ""
+        review_logger.warning(
+            "第 {} 次审查 | 未通过 | 分数: {} |{} 问题数: {} | 触发第 {} 次重写 | 标题: {}",
+            retries + 1, score, subs, len(issues), retries + 1, report_title,
+        )
+        review_logger.debug("审查反馈: {}", feedback_text[:300])
         return {
             "reviewer_retries": retries + 1,
             "status": "reviewing",
             "progress": 85.0,
+            "review_score": score,
+            "review_history": history,
             "reviewer_feedback": feedback_text,
         }
     else:
+        review_logger.warning(
+            "第 {} 次审查 | 未通过 (重试耗尽，放行) | 分数: {} | 问题数: {} | 标题: {}",
+            retries + 1, score, len(issues), report_title,
+        )
         return {
             "final_report": state["report_draft"],
             "status": "completed",
             "progress": 100.0,
+            "review_score": score,
+            "review_history": history,
         }

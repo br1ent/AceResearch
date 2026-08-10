@@ -25,6 +25,7 @@ class AgentSettings(BaseSettings):
     RESEARCHER_MAX_RESULTS: int = 5
     WRITER_TEMPERATURE: float = 0.6
     REVIEWER_MAX_RETRIES: int = 2
+    REVIEWER_PASS_THRESHOLD: float = 5.0  # 平均分 >= 此值即使 LLM 判 false 也放行（0 禁用）
     CHAT_MAX_ITERATIONS: int = 5
 
 

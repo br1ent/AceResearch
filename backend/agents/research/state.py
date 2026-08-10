@@ -17,6 +17,16 @@ class SearchResultItem(TypedDict):
     score: float
 
 
+class ReviewLogEntry(TypedDict):
+    """单次审查记录"""
+    attempt: int
+    passed: bool
+    score: float | None
+    issues: list[str]
+    suggestions: str
+    timestamp: str
+
+
 class ResearchState(TypedDict):
     """LangGraph 研究状态"""
 
@@ -39,6 +49,10 @@ class ResearchState(TypedDict):
     report_title: str                   # 报告标题
     report_draft: str                   # 报告草稿
     final_report: str                   # 最终报告
+
+    # 审查阶段
+    review_score: Optional[float]       # 最新一次审查分数
+    review_history: List[dict]          # 审查历史日志
 
     # 控制
     status: str                         # running / planning / searching / analyzing / writing / reviewing / completed / failed
