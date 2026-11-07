@@ -22,7 +22,7 @@ const md = new MarkdownIt({
 })
 
 // 可拖拽宽度
-const panelWidth = ref(420)
+const panelWidth = ref(640)
 const dragging = ref(false)
 
 function onMouseDown(e) {
