@@ -14,6 +14,7 @@ from routers.user import router as user_router
 from routers.prompts import router as prompts_router
 from routers.ws import router as ws_router
 from routers.knowledge_base.documents import router as kb_router
+from utils.exception_handlers import register_exception_handlers
 
 settings = get_settings()
 
@@ -22,6 +23,9 @@ app = FastAPI(
     description="AceResearch 研思 - 多 Agent 协作深度研究平台",
     version="1.0.0"
 )
+
+# 全局异常处理
+register_exception_handlers(app)
 
 # API 路由
 app.include_router(user_router)

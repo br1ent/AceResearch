@@ -7,6 +7,7 @@ import http, { setAccessToken as setApiToken } from "@/js/http/api.js";
 const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
+const loading = ref(false);
 
 const router = useRouter();
 const user = useUserStore();
@@ -23,6 +24,7 @@ async function handleLogin() {
   } else if (!password.value) {
     errorMessage.value = "密码不能为空!"
   } else {
+    loading.value = true
     try {
        const res = await http.post("/api/user/login", {
          email: email.value,
@@ -37,9 +39,20 @@ async function handleLogin() {
 
         await router.push({name: 'home-index'})
       } else {
-        errorMessage.value = data.message
+        errorMessage.value = data.message || "登录失败，请稍后重试!"
       }
-    } catch {
+    } catch (err) {
+      if (err.code === "ECONNABORTED") {
+        errorMessage.value = "请求超时，请检查网络后重试!"
+      } else if (err.response) {
+        errorMessage.value = err.response.data?.message
+          || err.response.data?.detail
+          || `服务器错误(${err.response.status})，请稍后重试!`
+      } else {
+        errorMessage.value = "无法连接服务器，请检查网络后重试!"
+      }
+    } finally {
+      loading.value = false
     }
   }
 }
@@ -63,7 +76,10 @@ async function handleLogin() {
           {{ errorMessage }}
         </div>
 
-        <button class="btn btn-neutral w-full">登录</button>
+        <button class="btn btn-neutral w-full" :disabled="loading">
+          <span v-if="loading" class="loading loading-spinner loading-sm"></span>
+          {{ loading ? "登录中..." : "登录" }}
+        </button>
         <p class="text-center text-sm mt-3 text-base-content/60 dark:text-white">
           没有账号？
           <router-link :to="{ name: 'user-register-index' }" class="link link-neutral link-hover">注册</router-link>
