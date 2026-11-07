@@ -17,6 +17,7 @@ def list_reports(
 ):
     """获取用户的所有报告"""
     from models.chat import Conversation
+    from models.plaza import ReportShare
     reports = (
         db.query(Report)
         .join(Conversation, Report.conversation_id == Conversation.id)
@@ -24,6 +25,10 @@ def list_reports(
         .order_by(Report.create_at.desc())
         .all()
     )
+    shared_map = {
+        s.report_id: s.id
+        for s in db.query(ReportShare).filter(ReportShare.report_id.in_([r.id for r in reports])).all()
+    } if reports else {}
     return {
         "success": True,
         "data": [
@@ -33,6 +38,8 @@ def list_reports(
                 "status": r.status,
                 "reviewer_rewrite_count": r.reviewer_rewrite_count,
                 "created_at": r.create_at.isoformat() if r.create_at else None,
+                "shared": r.id in shared_map,
+                "share_id": shared_map.get(r.id),
             }
             for r in reports
         ],
@@ -55,6 +62,11 @@ def delete_report(
     )
     if not report:
         raise HTTPException(status_code=404, detail="报告不存在")
+    from models.plaza import ReportLike, ReportShare
+    share = db.query(ReportShare).filter(ReportShare.report_id == report.id).first()
+    if share:
+        db.query(ReportLike).filter(ReportLike.share_id == share.id).delete()
+        db.delete(share)
     db.delete(report)
     db.commit()
     return {"success": True, "message": "报告已删除"}

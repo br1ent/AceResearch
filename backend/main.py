@@ -8,6 +8,7 @@ from config.database import engine, Base
 from routers.chat import router as chat_router
 from routers.chat.stream import router as chat_stream_router
 from routers.chat.reports import router as reports_router
+from routers.chat.plaza import router as plaza_router
 from routers.research.router import router as research_router
 from routers.user import router as user_router
 from routers.prompts import router as prompts_router
@@ -28,6 +29,7 @@ app.include_router(chat_router)
 app.include_router(chat_stream_router)
 app.include_router(research_router)
 app.include_router(reports_router)
+app.include_router(plaza_router)
 app.include_router(prompts_router)
 app.include_router(ws_router)
 app.include_router(kb_router)

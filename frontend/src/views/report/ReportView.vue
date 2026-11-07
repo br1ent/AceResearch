@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { FileText, Trash2, Loader2, BookOpen, X, Clock, ChevronLeft, ChevronRight, Search } from '@lucide/vue'
+import { FileText, Trash2, Loader2, BookOpen, X, Clock, ChevronLeft, ChevronRight, Search, Share2, Undo2 } from '@lucide/vue'
 import http from '@/js/http/api.js'
 import { marked } from 'marked'
 
@@ -9,6 +9,23 @@ const loading = ref(true)
 const showModal = ref(false)
 const currentReport = ref(null)
 const deletingId = ref(null)
+const publishingId = ref(null)
+
+// 发布 / 取消发布到报告广场
+async function toggleShare(report, event) {
+  event.stopPropagation()
+  publishingId.value = report.id
+  try {
+    if (report.shared) {
+      const res = await http.delete(`/api/plaza/publish/${report.id}`)
+      if (res.data?.success) { report.shared = false; report.share_id = null }
+    } else {
+      const res = await http.post(`/api/plaza/publish/${report.id}`)
+      if (res.data?.success) { report.shared = true; report.share_id = res.data.data.share_id }
+    }
+  } catch (e) { console.error('发布操作失败', e) }
+  finally { publishingId.value = null }
+}
 const searchText = ref('')
 
 // 搜索过滤
@@ -130,6 +147,13 @@ function statusBadge(status) {
                 <span class="text-xs px-2 py-0.5 rounded-full shrink-0 ml-3" :class="statusBadge(report.status)">
                   {{ report.status === 'completed' ? '已完成' : report.status }}
                 </span>
+                <button class="btn btn-ghost btn-xs gap-1 ml-2 shrink-0" :class="report.shared ? 'text-success' : 'text-base-content/50'"
+                  @click="toggleShare(report, $event)" :title="report.shared ? '已从广场发布，点击取消发布' : '发布到报告广场'" :disabled="publishingId === report.id">
+                  <Loader2 v-if="publishingId === report.id" class="w-4 h-4 animate-spin" />
+                  <Undo2 v-else-if="report.shared" class="w-4 h-4" />
+                  <Share2 v-else class="w-4 h-4" />
+                  <span class="text-xs">{{ report.shared ? '已发布' : '发布' }}</span>
+                </button>
                 <button class="btn btn-ghost btn-xs btn-square ml-2 shrink-0" @click="deleteReport(report, $event)" title="删除" :disabled="deletingId === report.id">
                   <Loader2 v-if="deletingId === report.id" class="w-4 h-4 animate-spin text-error" />
                   <Trash2 v-else class="w-4 h-4 text-error" />

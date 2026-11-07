@@ -5,6 +5,7 @@ import RegisterView from "@/views/user/RegisterView.vue";
 import ResearchView from "@/views/chat/ResearchView.vue";
 import ProjectsView from "@/views/project/ProjectsView.vue";
 import ReportView from "@/views/report/ReportView.vue";
+import PlazaView from "@/views/plaza/PlazaView.vue";
 import ResetPwdView from "@/views/user/ResetPwdView.vue";
 import NotFoundView from "@/views/error/NotFoundView.vue";
 import { useUserStore } from "@/stores/user.js";
@@ -56,6 +57,12 @@ const router = createRouter({
       path: '/report',
       name: 'report-index',
       component: ReportView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/plaza',
+      name: 'plaza-index',
+      component: PlazaView,
       meta: { requiresAuth: true },
     },
     {
