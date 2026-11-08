@@ -146,13 +146,18 @@ function formatTime(isoStr) {
         <div v-for="item in items" :key="item.id"
           class="card bg-base-100 shadow-sm border border-base-200 hover:shadow-md transition-shadow cursor-pointer"
           @click="viewReport(item)">
-          <div class="card-body py-3 px-5">
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3 min-w-0 flex-1">
-                <BookOpen class="w-5 h-5 shrink-0 text-info" />
+          <div class="card-body py-5 px-6">
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-4 min-w-0 flex-1">
+                <div class="avatar shrink-0">
+                  <div class="w-12 h-12 rounded-full ring ring-base-200 ring-offset-1 overflow-hidden bg-base-200 flex items-center justify-center">
+                    <img v-if="item.author_photo" :src="item.author_photo" :alt="item.author" class="object-cover" />
+                    <span v-else class="text-base font-semibold text-base-content/50">{{ item.author?.charAt(0)?.toUpperCase() }}</span>
+                  </div>
+                </div>
                 <div class="min-w-0 flex-1">
-                  <p class="font-medium truncate">{{ item.title }}</p>
-                  <p class="text-xs text-base-content/40 flex items-center gap-3 mt-0.5">
+                  <p class="font-semibold text-lg truncate">{{ item.title }}</p>
+                  <p class="text-xs text-base-content/40 flex items-center gap-3 mt-1">
                     <span class="flex items-center gap-1"><User class="w-3 h-3" /> {{ item.author }}</span>
                     <span class="flex items-center gap-1"><Clock class="w-3 h-3" /> {{ formatTime(item.published_at) }}</span>
                   </p>
@@ -181,9 +186,17 @@ function formatTime(isoStr) {
     <div v-if="showModal && currentReport" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="closeModal">
       <div class="bg-base-100 rounded-lg shadow-2xl w-full max-w-6xl flex flex-col" style="height: 90vh; max-height: 90vh;">
         <div class="flex items-center justify-between px-6 py-3 border-b border-base-200 shrink-0 gap-3">
-          <div class="min-w-0">
-            <h2 class="text-lg font-semibold truncate">{{ currentReport.title }}</h2>
-            <p class="text-xs text-base-content/40 mt-0.5">作者：{{ currentReport.author }} · 发布于 {{ formatTime(currentReport.published_at) }}</p>
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="avatar shrink-0">
+              <div class="w-10 h-10 rounded-full ring ring-base-200 ring-offset-1 overflow-hidden bg-base-200 flex items-center justify-center">
+                <img v-if="currentReport.author_photo" :src="currentReport.author_photo" :alt="currentReport.author" class="object-cover" />
+                <span v-else class="text-sm font-semibold text-base-content/50">{{ currentReport.author?.charAt(0)?.toUpperCase() }}</span>
+              </div>
+            </div>
+            <div class="min-w-0">
+              <h2 class="text-lg font-semibold truncate">{{ currentReport.title }}</h2>
+              <p class="text-xs text-base-content/40 mt-0.5">作者：{{ currentReport.author }} · 发布于 {{ formatTime(currentReport.published_at) }}</p>
+            </div>
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <button class="btn btn-ghost btn-sm gap-1" :class="currentReport.liked ? 'text-error' : 'text-base-content/50'"

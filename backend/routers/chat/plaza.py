@@ -13,6 +13,14 @@ from utils.auth import get_current_user
 router = APIRouter(prefix="/api/plaza", tags=["报告广场"])
 
 
+def _photo_url(photo: str | None) -> str:
+    from config.settings import get_settings
+    photo = photo or ""
+    if photo.startswith("/"):
+        return f"{get_settings().BASE_URL}{photo}"
+    return photo
+
+
 def _get_owned_report(db: Session, report_id: int, user_id: int) -> Report:
     report = (
         db.query(Report)
@@ -35,7 +43,7 @@ def list_plaza_reports(
     current_user: User = Depends(get_current_user),
 ):
     """广场报告列表，支持标题/作者搜索，按点赞量或发布日期排序"""
-    query = db.query(ReportShare, User.username).join(User, ReportShare.publisher_id == User.id)
+    query = db.query(ReportShare, User.username, User.photo).join(User, ReportShare.publisher_id == User.id)
 
     keyword = keyword.strip()
     if keyword:
@@ -50,7 +58,7 @@ def list_plaza_reports(
     total = query.count()
     rows = query.offset((page - 1) * page_size).limit(page_size).all()
 
-    share_ids = [share.id for share, _ in rows]
+    share_ids = [share.id for share, _, _ in rows]
     liked_ids = set()
     if share_ids:
         liked_ids = {
@@ -71,11 +79,12 @@ def list_plaza_reports(
                     "id": share.id,
                     "title": share.title,
                     "author": username,
+                    "author_photo": _photo_url(photo),
                     "like_count": share.like_count,
                     "liked": share.id in liked_ids,
                     "published_at": share.create_at.isoformat() if share.create_at else None,
                 }
-                for share, username in rows
+                for share, username, photo in rows
             ],
         },
     }
@@ -89,7 +98,7 @@ def get_plaza_report_detail(
 ):
     """广场报告详情"""
     row = (
-        db.query(ReportShare, Report, User.username)
+        db.query(ReportShare, Report, User.username, User.photo)
         .join(Report, ReportShare.report_id == Report.id)
         .join(User, ReportShare.publisher_id == User.id)
         .filter(ReportShare.id == share_id)
@@ -97,7 +106,7 @@ def get_plaza_report_detail(
     )
     if not row:
         raise HTTPException(status_code=404, detail="分享不存在或已取消发布")
-    share, report, username = row
+    share, report, username, photo = row
 
     liked = (
         db.query(ReportLike)
@@ -113,6 +122,7 @@ def get_plaza_report_detail(
             "title": share.title,
             "content": report.content,
             "author": username,
+            "author_photo": _photo_url(photo),
             "like_count": share.like_count,
             "liked": liked,
             "published_at": share.create_at.isoformat() if share.create_at else None,
