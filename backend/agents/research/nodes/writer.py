@@ -1,20 +1,12 @@
 """Writer Agent：根据大纲和分析结果撰写研究报告"""
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 from config.agents import get_agent_settings
 from config.prompts import get_research_prompt
 from agents.research.state import ResearchState
+from utils.user_llm import get_chat_llm
 
 settings = get_agent_settings()
-
-llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=settings.WRITER_TEMPERATURE,
-    max_tokens=settings.DEEPSEEK_MAX_TOKENS * 2,
-)
 
 
 async def writer_node(state: ResearchState) -> dict:
@@ -40,7 +32,11 @@ async def writer_node(state: ResearchState) -> dict:
         ),
     ])
 
-    chain = prompt | llm
+    chain = prompt | get_chat_llm(
+        state["user_id"],
+        temperature=settings.WRITER_TEMPERATURE,
+        max_tokens=settings.DEEPSEEK_MAX_TOKENS * 2,
+    )
     response = await chain.ainvoke({
         "title": state["report_title"],
         "outline": outline_text,

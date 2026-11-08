@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from config.database import get_db
 from models.user import User
 from utils.auth import get_current_user
+from utils.user_llm import require_dashscope_key
 from config.knowledge_base import get_kb_settings
 from services.knowledge_base.document_service import (
     upload_and_process, list_documents, delete_document, get_document_count,
@@ -39,6 +40,8 @@ async def upload_doc(
     current_user: User = Depends(get_current_user),
 ):
     """上传文档"""
+    require_dashscope_key(current_user.id)
+
     # 校验文件类型
     ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else ""
     if ext != "md":

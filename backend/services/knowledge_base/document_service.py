@@ -4,44 +4,18 @@ import os
 import re
 
 import chromadb
-import httpx
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from config.knowledge_base import get_kb_settings
 from config.database import SessionLocal
 from models.knowledge_base import KnowledgeDocument
+from utils.user_llm import get_embeddings
 
 kb_settings = get_kb_settings()
 
 _chroma_path = os.path.abspath(kb_settings.CHROMA_PERSIST_DIR)
 os.makedirs(_chroma_path, exist_ok=True)
 _chroma_client = chromadb.PersistentClient(path=_chroma_path)
-
-
-class DashScopeEmbedding:
-    def __init__(self):
-        self.api_key = kb_settings.EMBEDDING_API_KEY
-        self.base_url = kb_settings.EMBEDDING_BASE_URL.rstrip("/")
-        self.model = kb_settings.EMBEDDING_MODEL
-
-    def embed_query(self, text: str) -> list[float]:
-        return self.embed_documents([text])[0]
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        resp = httpx.post(
-            f"{self.base_url}/embeddings",
-            json={"model": self.model, "input": texts},
-            headers={"Authorization": f"Bearer {self.api_key}"},
-            timeout=60.0,
-        )
-        data = resp.json()
-        if resp.status_code != 200:
-            raise RuntimeError(f"Embedding API error: {data}")
-        items = sorted(data.get("data", []), key=lambda x: x.get("index", 0))
-        return [item["embedding"] for item in items]
-
-
-embeddings = DashScopeEmbedding()
 
 
 def _get_collection(user_id: int):
@@ -189,11 +163,12 @@ async def _process_document(doc_id: int, text: str, user_id: int):
                 chunk_ids.append(f"doc_{doc_id}_chunk_{i}")
 
             # 批量向量化（API 限制每次最多 10 条）
+            embedding_client = get_embeddings(user_id)
             all_embeddings = []
             batch_size = 10
             for i in range(0, len(chunks), batch_size):
                 batch = chunks[i:i + batch_size]
-                all_embeddings.extend(embeddings.embed_documents(batch))
+                all_embeddings.extend(embedding_client.embed_documents(batch))
 
             collection.add(
                 embeddings=all_embeddings,

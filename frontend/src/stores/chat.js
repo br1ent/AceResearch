@@ -167,8 +167,9 @@ export const useChatStore = defineStore('chat', () => {
       }
     } catch (e) {
       console.error('发起研究失败', e)
+      const detail = e.response?.data?.detail || e.response?.data?.message || '系统错误，请稍后重试'
       isResearching.value = false; researchMessage.value = '发起研究失败，请重试'; researchingConvId.value = null
-      addMessage({ id: Date.now(), role: 'assistant', content: '❌ 系统错误，请稍后重试', msg_type: 'error', created_at: new Date().toISOString() })
+      addMessage({ id: Date.now(), role: 'assistant', content: `❌ ${detail}`, msg_type: 'error', created_at: new Date().toISOString() })
     }
     return null
   }
@@ -207,7 +208,14 @@ export const useChatStore = defineStore('chat', () => {
         }),
       })
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`
+        try {
+          const errData = await res.json()
+          detail = errData?.detail || errData?.message || detail
+        } catch { /* ignore */ }
+        throw new Error(detail)
+      }
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -243,7 +251,7 @@ export const useChatStore = defineStore('chat', () => {
       await fetchConversations()
     } catch (e) {
       console.error('聊天失败', e)
-      updateLastMessage('❌ 请求失败，请稍后重试')
+      updateLastMessage(`❌ ${e.message || '请求失败，请稍后重试'}`)
     } finally {
       isChatting.value = false
     }

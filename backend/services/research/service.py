@@ -251,6 +251,7 @@ class ResearchService:
                     title=state.get("report_title", "研究报告"),
                     outline=outline,
                     content=content,
+                    user_id=user_id,
                 )
                 conv_service.add_message(conv_id=conversation_id, role="assistant",
                     content=summary, msg_type="report",

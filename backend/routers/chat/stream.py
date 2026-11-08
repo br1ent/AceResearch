@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from config.database import get_db
 from models.user import User
 from utils.auth import get_current_user
+from utils.user_llm import require_deepseek_key, require_dashscope_key
 from schemas.chat.chat import SendMessageRequest
 from services.chat import ConversationService
 from services.chat.service import ChatService
@@ -22,9 +23,12 @@ async def send_message_stream(
     current_user: User = Depends(get_current_user),
 ):
     """闲聊流式输出（SSE）"""
-    conv_service = ConversationService(db)
-
     mode = body.mode or "chat"
+    require_deepseek_key(current_user.id)
+    if mode == "knowledge":
+        require_dashscope_key(current_user.id)
+
+    conv_service = ConversationService(db)
 
     # 确定/创建对话
     if body.conversation_id:

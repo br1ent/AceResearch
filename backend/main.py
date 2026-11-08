@@ -64,3 +64,26 @@ def startup():
     """启动时初始化数据库表"""
     import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    _migrate_user_apikey_columns()
+
+
+def _migrate_user_apikey_columns():
+    """幂等迁移：users 表补充用户级 API Key 字段"""
+    from sqlalchemy import text
+    new_columns = {
+        "deepseek_api_key": "VARCHAR(200) NULL DEFAULT '' COMMENT '用户自己的 DeepSeek API Key'",
+        "dashscope_api_key": "VARCHAR(200) NULL DEFAULT '' COMMENT '用户自己的阿里云百炼 API Key'",
+        "dashscope_workspace_id": "VARCHAR(200) NULL DEFAULT '' COMMENT '用户自己的百炼 Workspace ID'",
+    }
+    with engine.connect() as conn:
+        existing = {
+            row[0]
+            for row in conn.execute(text(
+                "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+                "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'"
+            ))
+        }
+        for name, ddl in new_columns.items():
+            if name not in existing:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {ddl}"))
+        conn.commit()

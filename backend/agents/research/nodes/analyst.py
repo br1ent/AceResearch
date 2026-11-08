@@ -1,20 +1,12 @@
 """Analyst Agent：汇总分析所有搜索结果"""
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 from config.agents import get_agent_settings
 from config.prompts import get_research_prompt
 from agents.research.state import ResearchState
+from utils.user_llm import get_chat_llm
 
 settings = get_agent_settings()
-
-llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=settings.DEEPSEEK_TEMPERATURE,
-    max_tokens=settings.DEEPSEEK_MAX_TOKENS,
-)
 
 
 async def analyst_node(state: ResearchState) -> dict:
@@ -29,7 +21,11 @@ async def analyst_node(state: ResearchState) -> dict:
         ("human", "研究主题：{topic}\n\n搜索材料：\n{search_materials}"),
     ])
 
-    chain = prompt | llm
+    chain = prompt | get_chat_llm(
+        state["user_id"],
+        temperature=settings.DEEPSEEK_TEMPERATURE,
+        max_tokens=settings.DEEPSEEK_MAX_TOKENS,
+    )
     response = await chain.ainvoke({
         "topic": state["topic"],
         "search_materials": search_materials or "（无搜索结果）",

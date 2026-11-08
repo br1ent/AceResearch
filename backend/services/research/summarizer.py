@@ -1,21 +1,9 @@
 """研究完成后 LLM 自动生成总结"""
-from langchain_openai import ChatOpenAI
-
-from config.agents import get_agent_settings
 from config.prompts import get_summarizer_prompt
-
-settings = get_agent_settings()
-
-_llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=0.3,
-    max_tokens=512,
-)
+from utils.user_llm import get_chat_llm
 
 
-async def summarize_report(title: str, outline: list, content: str) -> str:
+async def summarize_report(title: str, outline: list, content: str, user_id: int = 0) -> str:
     """让 LLM 自动总结本次研究做了什么、写了什么"""
     outline_text = "\n".join(f"- {o}" for o in outline)
     system_prompt = get_summarizer_prompt()
@@ -26,7 +14,7 @@ async def summarize_report(title: str, outline: list, content: str) -> str:
         f"报告内容（摘要）：{content[:2000]}"
     )
     try:
-        response = await _llm.ainvoke(prompt)
+        response = await get_chat_llm(user_id, temperature=0.3, max_tokens=512).ainvoke(prompt)
         return response.content.strip()
     except Exception:
         return (

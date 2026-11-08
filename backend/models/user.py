@@ -15,6 +15,9 @@ class User(Base):
     photo: Mapped[str] = mapped_column(String(100), comment="用户头像的url")
     memory: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="", comment="用户记忆JSON（闲聊模式）")
     kb_memory: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="", comment="用户记忆JSON（知识检索模式）")
+    deepseek_api_key: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, default="", comment="用户自己的 DeepSeek API Key")
+    dashscope_api_key: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, default="", comment="用户自己的阿里云百炼 API Key")
+    dashscope_workspace_id: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, default="", comment="用户自己的百炼 Workspace ID")
 
     def __repr__(self) -> str:
         return f"<{self.id} {self.username} {self.email}>"

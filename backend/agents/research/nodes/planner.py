@@ -1,22 +1,14 @@
 """Planner Agent：分析研究主题，生成大纲和子任务"""
 import json
 
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 from config.agents import get_agent_settings
 from config.prompts import get_research_prompt
 from agents.research.state import ResearchState, ResearchSubtask
+from utils.user_llm import get_chat_llm
 
 settings = get_agent_settings()
-
-llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=settings.PLANNER_TEMPERATURE,
-    max_tokens=settings.DEEPSEEK_MAX_TOKENS,
-)
 
 
 async def planner_node(state: ResearchState) -> dict:
@@ -27,7 +19,11 @@ async def planner_node(state: ResearchState) -> dict:
         ("human", "研究主题：{topic}"),
     ])
 
-    chain = prompt | llm
+    chain = prompt | get_chat_llm(
+        state["user_id"],
+        temperature=settings.PLANNER_TEMPERATURE,
+        max_tokens=settings.DEEPSEEK_MAX_TOKENS,
+    )
     response = await chain.ainvoke({"topic": state["topic"]})
 
     text = response.content.strip()

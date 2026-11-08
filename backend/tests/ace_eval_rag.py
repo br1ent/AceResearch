@@ -43,7 +43,10 @@ os.chdir(str(backend_dir))  # 使 config 能读取 backend/.env，ChromaDB 落�
 
 import httpx
 from config.knowledge_base import get_kb_settings
-from services.knowledge_base.document_service import _get_collection, embeddings
+from services.knowledge_base.document_service import _get_collection
+from utils.user_llm import get_embeddings
+
+embeddings = get_embeddings(0)
 
 kb_settings = get_kb_settings()
 

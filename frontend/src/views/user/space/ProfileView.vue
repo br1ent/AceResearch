@@ -1,6 +1,7 @@
 <script setup>
 import AvatarCard from './compoenents/AvatarCard.vue'
 import ProfileCard from './compoenents/ProfileCard.vue'
+import ApiKeyCard from './compoenents/ApiKeyCard.vue'
 </script>
 
 <template>
@@ -16,11 +17,16 @@ import ProfileCard from './compoenents/ProfileCard.vue'
         </div>
       </div>
 
-      <!-- 右侧：资料 -->
-      <div class="md:col-span-2">
+      <!-- 右侧：资料 + API Key 配置 -->
+      <div class="md:col-span-2 flex flex-col gap-6">
         <div class="card bg-base-100 shadow-xl">
           <div class="card-body">
             <ProfileCard />
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow-xl">
+          <div class="card-body">
+            <ApiKeyCard />
           </div>
         </div>
       </div>

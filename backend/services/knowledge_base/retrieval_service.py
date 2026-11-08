@@ -3,9 +3,10 @@
 import hashlib
 
 import httpx
-from services.knowledge_base.document_service import _get_collection, embeddings
+from services.knowledge_base.document_service import _get_collection
 from config.knowledge_base import get_kb_settings
 from utils.redis import get_redis
+from utils.user_llm import get_effective_keys, get_embeddings
 
 kb_settings = get_kb_settings()
 _redis = get_redis()
@@ -25,9 +26,10 @@ def invalidate_rag_cache(user_id: int) -> None:
             break
 
 
-def _rerank(query: str, documents: list[str]) -> list[dict] | None:
+def _rerank(user_id: int, query: str, documents: list[str]) -> list[dict] | None:
     """调用 qwen3-rerank 对候选文本重排序，返回排序后的结果列表"""
-    if not kb_settings.RERANK_WORKSPACE_ID or not documents:
+    _, dashscope_key, workspace_id = get_effective_keys(user_id)
+    if not workspace_id or not documents:
         return None
 
     url = "https://dashscope.aliyuncs.com/api/v1/services/rerank/text-rerank/text-rerank"
@@ -45,7 +47,10 @@ def _rerank(query: str, documents: list[str]) -> list[dict] | None:
                     "return_documents": True,
                 },
             },
-            headers={"Authorization": f"Bearer {kb_settings.EMBEDDING_API_KEY}"},
+            headers={
+                "Authorization": f"Bearer {dashscope_key}",
+                "X-DashScope-WorkSpace": workspace_id,
+            },
             timeout=30.0,
         )
         if resp.status_code == 200:
@@ -74,7 +79,7 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
 
         # 向量召回（固定 10 条候选）
         recall_k = min(collection.count(), kb_settings.RECALL_K)
-        query_embedding = embeddings.embed_query(query)
+        query_embedding = get_embeddings(user_id).embed_query(query)
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=recall_k,
@@ -88,7 +93,7 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
         metas = results["metadatas"][0]
 
         # 重排序
-        reranked = _rerank(query, docs)
+        reranked = _rerank(user_id, query, docs)
         if reranked:
             lines = []
             for i, item in enumerate(reranked, 1):

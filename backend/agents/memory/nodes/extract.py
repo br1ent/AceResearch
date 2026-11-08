@@ -1,21 +1,12 @@
 """记忆提取节点：从对话中提取用户信息并更新 users.memory"""
 import json
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from config.agents import get_agent_settings
 from config.prompts import get_prompt
+from utils.user_llm import get_chat_llm
 
 settings = get_agent_settings()
-
-llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=0.2,
-    max_tokens=settings.DEEPSEEK_MAX_TOKENS,
-)
 
 
 def extract_memory_node(state: dict) -> dict:
@@ -39,7 +30,7 @@ def extract_memory_node(state: dict) -> dict:
         HumanMessage(content=user_input),
     ]
 
-    response = llm.invoke(messages)
+    response = get_chat_llm(user_id, temperature=0.2, max_tokens=settings.DEEPSEEK_MAX_TOKENS).invoke(messages)
     text = response.content.strip()
 
     # 解析 JSON

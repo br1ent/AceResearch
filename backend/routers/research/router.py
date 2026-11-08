@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from config.database import get_db
 from models.user import User
 from utils.auth import get_current_user
+from utils.user_llm import require_deepseek_key
 from schemas.chat.chat import SendMessageRequest
 from services.chat import ConversationService
 from services.research.service import ResearchService
@@ -19,6 +20,8 @@ async def send_message(
     current_user: User = Depends(get_current_user),
 ):
     """发送研究消息（启动研究模式）"""
+    require_deepseek_key(current_user.id)
+
     conv_service = ConversationService(db)
 
     # 1. 确定/创建对话 — 研究模式每个对话只研究一个话题
@@ -64,6 +67,7 @@ async def confirm_research(
     current_user: User = Depends(get_current_user),
 ):
     """用户确认研究方案，开始执行研究"""
+    require_deepseek_key(current_user.id)
     report_id = body.get("report_id")
     conversation_id = body.get("conversation_id")
     if not report_id or not conversation_id:
@@ -89,6 +93,7 @@ async def revise_research_plan(
     current_user: User = Depends(get_current_user),
 ):
     """用户修改研究方案"""
+    require_deepseek_key(current_user.id)
     report_id = body.get("report_id")
     conversation_id = body.get("conversation_id")
     feedback = body.get("feedback", "").strip()

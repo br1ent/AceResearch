@@ -3,34 +3,18 @@ import json
 import re
 from datetime import datetime, timezone
 
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 from config.agents import get_agent_settings
 from config.prompts import get_research_prompt
 from agents.research.state import ResearchState
 from utils.logger import review_logger
+from utils.user_llm import get_chat_llm
 
 settings = get_agent_settings()
 
-llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=0.0,
-    max_tokens=1024,
-)
 
-_fix_llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=0.0,
-    max_tokens=1024,
-)
-
-
-async def _extract_json(text: str) -> dict | None:
+async def _extract_json(text: str, user_id: int) -> dict | None:
     """分层提取 JSON：先尝试直接解析，再用正则匹配，最后用 LLM 修复"""
     # 第一层：直接解析
     text = text.strip()
@@ -62,7 +46,7 @@ async def _extract_json(text: str) -> dict | None:
 
     # 第四层：用 LLM 修复
     try:
-        resp = await _fix_llm.ainvoke([
+        resp = await get_chat_llm(user_id, temperature=0.0, max_tokens=1024).ainvoke([
             ("system", "你是一个 JSON 修复器。提取下面文本中的 JSON 对象（包含 passed、issues、suggestions 字段），只输出 JSON，不要其他内容。"),
             ("human", text[:2000]),
         ])
@@ -96,14 +80,14 @@ async def reviewer_node(state: ResearchState) -> dict:
         ),
     ])
 
-    chain = prompt | llm
+    chain = prompt | get_chat_llm(state["user_id"], temperature=0.0, max_tokens=1024)
     response = await chain.ainvoke({
         "title": report_title,
         "outline": outline_text,
         "report": state["report_draft"][:8000],
     })
 
-    review = await _extract_json(response.content)
+    review = await _extract_json(response.content, state["user_id"])
 
     # 解析失败 → 强制触发重写
     if review is None:

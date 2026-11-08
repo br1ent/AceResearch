@@ -1,22 +1,14 @@
 """闲聊 / 知识检索服务：LangGraph 上下文组装 + ReAct 工具循环 + DeepSeek 流式输出"""
 import asyncio
-from langchain_openai import ChatOpenAI
 
 from config.agents import get_agent_settings
 from agents.chat.graph import ChatGraph
 from agents.chat.state import ChatState
 from agents.chat.tools import CHAT_TOOLS, KB_TOOLS
 from agents.chat.nodes.tool_node import tool_node
+from utils.user_llm import get_chat_llm
 
 settings = get_agent_settings()
-
-_llm = ChatOpenAI(
-    api_key=settings.DEEPSEEK_API_KEY,
-    base_url=settings.DEEPSEEK_BASE_URL,
-    model=settings.DEEPSEEK_MODEL,
-    temperature=settings.DEEPSEEK_TEMPERATURE,
-    max_tokens=settings.DEEPSEEK_MAX_TOKENS,
-)
 
 chat_graph = ChatGraph()
 
@@ -101,7 +93,12 @@ class ChatService:
         history = state["history"]
 
         # 2. ReAct 循环：LLM 流式调用 + 工具执行
-        llm_with_tools = _llm.bind_tools(tools)
+        llm = get_chat_llm(
+            uid,
+            temperature=settings.DEEPSEEK_TEMPERATURE,
+            max_tokens=settings.DEEPSEEK_MAX_TOKENS,
+        )
+        llm_with_tools = llm.bind_tools(tools)
         full_reply = ""
 
         while True:
