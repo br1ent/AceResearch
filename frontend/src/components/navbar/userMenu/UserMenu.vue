@@ -3,7 +3,7 @@ import { useUserStore } from "@/stores/user.js";
 import { useChatStore } from "@/stores/chat.js";
 import http from "@/js/http/api.js";
 import { useRouter } from "vue-router";
-import { User, FileText, LogOut, BookOpen, Globe } from '@lucide/vue';
+import { User, FileText, LogOut, BookOpen } from '@lucide/vue';
 
 const user = useUserStore();
 const chat = useChatStore();
@@ -68,14 +68,6 @@ async function handleLogout() {
         <router-link :to="{ name: 'report-index' }" class="flex items-center gap-3 px-4 py-2" @click="closeMenu">
           <FileText class="w-4 h-4 shrink-0" />
           <span>我的报告</span>
-        </router-link>
-      </li>
-
-      <!-- 报告广场 -->
-      <li>
-        <router-link :to="{ name: 'plaza-index' }" class="flex items-center gap-3 px-4 py-2" @click="closeMenu">
-          <Globe class="w-4 h-4 shrink-0" />
-          <span>报告广场</span>
         </router-link>
       </li>
 

@@ -9,9 +9,9 @@ const themeStore = useThemeStore()
 const user = useUserStore()
 const router = useRouter()
 
-function goChat() {
+function goPlaza() {
   if (user.isLogin()) {
-    router.push({ name: 'chat-index' })
+    router.push({ name: 'plaza-index' })
   } else {
     router.push({ name: 'user-login-index' })
   }
@@ -27,8 +27,8 @@ function goChat() {
       </router-link>
     </div>
     <div class="navbar-center">
-      <button class="btn btn-ghost gap-2 px-8 rounded-full" @click="goChat">
-        开始使用
+      <button class="btn btn-ghost gap-2 px-8 rounded-full" @click="goPlaza">
+        报告广场
       </button>
     </div>
     <!-- 右侧 -->
