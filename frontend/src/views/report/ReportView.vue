@@ -8,8 +8,37 @@ const reports = ref([])
 const loading = ref(true)
 const showModal = ref(false)
 const currentReport = ref(null)
-const deletingId = ref(null)
 const publishingId = ref(null)
+const showDeleteModal = ref(false)
+const deletingReport = ref(null)
+const isDeleting = ref(false)
+
+function openDeleteModal(report, event) {
+  event.stopPropagation()
+  deletingReport.value = report
+  showDeleteModal.value = true
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false
+  deletingReport.value = null
+}
+
+async function confirmDelete() {
+  if (!deletingReport.value) return
+  isDeleting.value = true
+  try {
+    const res = await http.delete(`/api/reports/${deletingReport.value.id}`)
+    if (res.data?.success) {
+      reports.value = reports.value.filter(r => r.id !== deletingReport.value.id)
+      if (page.value > totalPages.value) page.value = Math.max(1, totalPages.value)
+      closeDeleteModal()
+    }
+  } catch (e) { console.error('删除报告失败', e) }
+  finally {
+    isDeleting.value = false
+  }
+}
 
 // 发布 / 取消发布到报告广场
 async function toggleShare(report, event) {
@@ -81,19 +110,6 @@ function closeModal() {
   currentReport.value = null
 }
 
-async function deleteReport(report, event) {
-  event.stopPropagation()
-  deletingId.value = report.id
-  try {
-    const res = await http.delete(`/api/reports/${report.id}`)
-    if (res.data?.success) {
-      reports.value = reports.value.filter(r => r.id !== report.id)
-      if (page.value > totalPages.value) page.value = Math.max(1, totalPages.value)
-    }
-  } catch (e) { console.error('删除报告失败', e) }
-  finally { deletingId.value = null }
-}
-
 function formatTime(isoStr) {
   if (!isoStr) return ''
   const d = new Date(isoStr)
@@ -154,9 +170,8 @@ function statusBadge(status) {
                   <Share2 v-else class="w-4 h-4" />
                   <span class="text-xs">{{ report.shared ? '已发布' : '发布' }}</span>
                 </button>
-                <button class="btn btn-ghost btn-xs btn-square ml-2 shrink-0" @click="deleteReport(report, $event)" title="删除" :disabled="deletingId === report.id">
-                  <Loader2 v-if="deletingId === report.id" class="w-4 h-4 animate-spin text-error" />
-                  <Trash2 v-else class="w-4 h-4 text-error" />
+                <button class="btn btn-ghost btn-xs btn-square ml-2 shrink-0" @click="openDeleteModal(report, $event)" title="删除">
+                  <Trash2 class="w-4 h-4 text-error" />
                 </button>
               </div>
             </div>
@@ -171,6 +186,28 @@ function statusBadge(status) {
         </div>
       </template>
     </template>
+
+    <!-- 删除确认模态框 -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="closeDeleteModal">
+      <div class="card bg-base-100 shadow-xl max-w-sm w-full mx-4">
+        <div class="card-body">
+          <h3 class="card-title text-lg">确认删除</h3>
+          <p class="text-sm text-base-content/70 py-2">
+            确定删除报告 <strong>"{{ deletingReport?.title }}"</strong> 吗？此操作不可撤销。
+          </p>
+          <div class="card-actions justify-end gap-2 mt-2">
+            <button class="btn bg-base-300 text-base-content border-none hover:bg-base-300/80" @click="closeDeleteModal">
+              取消
+            </button>
+            <button class="btn btn-error" :disabled="isDeleting" @click="confirmDelete">
+              <Loader2 v-if="isDeleting" class="w-4 h-4 animate-spin" />
+              <Trash2 v-else class="w-4 h-4" />
+              确认删除
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 报告详情模态框 -->
     <div v-if="showModal && currentReport" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="closeModal">
