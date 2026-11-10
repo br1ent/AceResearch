@@ -1,13 +1,24 @@
 <script setup>
-import {Sun, Moon, ArrowRight} from '@lucide/vue'
+import {Sun, Moon} from '@lucide/vue'
 import { useThemeStore } from '@/js/theme.js'
 import UserMenu from '@/components/navbar/userMenu/UserMenu.vue'
 import {useUserStore} from "@/stores/user.js";
+import {useChatStore} from "@/stores/chat.js";
 import {useRouter} from "vue-router";
 
 const themeStore = useThemeStore()
 const user = useUserStore()
+const chat = useChatStore()
 const router = useRouter()
+
+function goMode(mode) {
+  if (!user.isLogin()) {
+    router.push({ name: 'user-login-index' })
+    return
+  }
+  chat.switchMode(mode)
+  router.push({ name: 'chat-index' })
+}
 
 function goPlaza() {
   if (user.isLogin()) {
@@ -26,10 +37,12 @@ function goPlaza() {
         <span class="text-lg font-semibold tracking-tight">AceResearch 研思</span>
       </router-link>
     </div>
-    <div class="navbar-center">
-      <button class="btn btn-ghost gap-2 px-8 rounded-full" @click="goPlaza">
-        报告广场
-      </button>
+    <!-- 中间导航 -->
+    <div class="navbar-center flex items-center gap-1">
+      <button class="btn btn-ghost btn-sm px-4" @click="goMode('chat')">闲聊模式</button>
+      <button class="btn btn-ghost btn-sm px-4" @click="goMode('research')">研究模式</button>
+      <button class="btn btn-ghost btn-sm px-4" @click="goMode('knowledge')">个人文档检索</button>
+      <button class="btn btn-ghost btn-sm px-4" :class="{ 'btn-active': $route.name === 'plaza-index' }" @click="goPlaza">报告广场</button>
     </div>
     <!-- 右侧 -->
     <div class="navbar-end">

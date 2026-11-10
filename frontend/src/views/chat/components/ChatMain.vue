@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onUnmounted, onMounted, watch, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { Send, Loader2, BookOpen, MessageCircle, FileText, Lock } from '@lucide/vue'
+import { Send, Loader2, BookOpen, FileText, Lock } from '@lucide/vue'
 import { useUserStore } from '@/stores/user.js'
 import { useChatStore } from '@/stores/chat.js'
 import { useKnowledgeStore } from '@/stores/knowledge.js'
@@ -67,23 +67,6 @@ function formatTime(isoStr) {
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- 模式切换条 -->
-    <div class="flex items-center justify-center gap-2 px-4 py-2 border-b border-base-200 bg-base-100/80">
-      <button class="btn btn-sm gap-1.5" :class="chatStore.mode === 'chat' ? 'btn-neutral' : 'btn-ghost'"
-        @click="chatStore.switchMode('chat')" :disabled="chatStore.isResearching || chatStore.isChatting">
-        <MessageCircle class="w-4 h-4" /> 闲聊模式
-      </button>
-      <button class="btn btn-sm gap-1.5" :class="chatStore.mode === 'research' ? 'btn-neutral' : 'btn-ghost'"
-        @click="chatStore.switchMode('research')" :disabled="chatStore.isResearching || chatStore.isChatting">
-        <BookOpen class="w-4 h-4" /> 研究模式
-      </button>
-      <button class="btn btn-sm gap-1.5" :class="chatStore.mode === 'knowledge' ? 'btn-neutral' : 'btn-ghost'"
-        @click="chatStore.switchMode('knowledge')"
-        :disabled="chatStore.isResearching || chatStore.isChatting">
-        <BookOpen class="w-4 h-4" /> 个人文档检索
-      </button>
-    </div>
-
     <div v-if="visibleMessages.length === 0" class="flex-1 flex flex-col items-center justify-center px-6">
       <template v-if="chatStore.mode === 'research'">
         <h2 class="text-2xl font-bold mb-2">{{ userStore.username }}，今天想研究些什么领域？</h2>
