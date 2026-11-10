@@ -304,6 +304,21 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  // ---- 重命名对话 ----
+  async function renameConversation(convId, title) {
+    try {
+      const res = await http.post(`/api/chat/conversations/${convId}/title`, { title })
+      if (res.data?.success) {
+        const conv = conversations.value.find(c => c.id === convId)
+        if (conv) conv.title = res.data.data.title
+        return true
+      }
+    } catch (e) {
+      console.error('重命名对话失败', e)
+    }
+    return false
+  }
+
   // ---- 删除对话 ----
   async function deleteConversation(convId) {
     if (!convId) return
@@ -353,6 +368,6 @@ export const useChatStore = defineStore('chat', () => {
     planPanelOpen, openPlanPanel, closePlanPanel,
     fetchConversations, createConversation, fetchMessages, addMessage,
     sendMessage, selectConversation, connectWebSocket, disconnectWebSocket,
-    deleteConversation, loadMore, resetStore,
+    deleteConversation, renameConversation, loadMore, resetStore,
   }
 })

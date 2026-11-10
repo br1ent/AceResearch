@@ -99,6 +99,27 @@ def get_report(
     }
 
 
+@router.post("/conversations/{conv_id}/title")
+def rename_conversation(
+    conv_id: int,
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """重命名对话标题"""
+    title = (body.get("title") or "").strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="标题不能为空")
+    if len(title) > 100:
+        raise HTTPException(status_code=400, detail="标题不能超过100个字符")
+    service = ConversationService(db)
+    conv = service.get_by_id(conv_id, current_user.id)
+    if not conv:
+        raise HTTPException(status_code=404, detail="对话不存在")
+    conv = service.update_title(conv_id, title)
+    return {"success": True, "data": ConversationOut.model_validate(conv)}
+
+
 @router.delete("/conversations/{conv_id}")
 def delete_conversation(
     conv_id: int,
