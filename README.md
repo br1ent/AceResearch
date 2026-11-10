@@ -16,6 +16,8 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
 - **RAG 知识库** — 上传 Markdown 文档，语义分块 + 向量检索 + 重排序，精准文档问答
 - **流式对话** — SSE 实时推送，用户即时看到 AI 回复内容
 - **独立记忆** — 闲聊和知识库对话各自拥有独立记忆，知识库模式每轮独立检索无历史污染
+- **报告广场** — 一键发布报告到广场，全站用户可浏览、点赞，支持按标题/作者搜索和点赞量/日期排序
+- **用户级 API Key** — 用户在个人资料页配置自己的 DeepSeek / 阿里云百炼 Key，未配置则对应功能不可用
 - **Token 安全** — Redis 白名单机制，logout 后 Token 立即失效
 - **查询缓存** — RAG 相同查询 10 分钟内直接返回缓存结果，减少 API 调用
 
@@ -27,9 +29,10 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
 - Node.js 18+
 - MySQL 8.0+
 - Redis 7+
-- DeepSeek API Key
-- Tavily API Key
-- 阿里云百炼 API Key（知识库需要）
+- Tavily API Key（联网搜索，平台全局配置）
+- 大模型调用使用**用户自行申请的 API Key**（DeepSeek 与阿里云百炼），无需在服务端配置：
+  - DeepSeek：https://platform.deepseek.com/api_keys
+  - 阿里云百炼（嵌入 + 重排序 + Workspace ID）：https://bailian.console.aliyun.com/cn-beijing/model/settings/api-key
 
 ### 安装 Redis
 
@@ -78,13 +81,13 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 # Redis
 REDIS_URL=redis://localhost:6379/0
 
-# DeepSeek
+# DeepSeek（可选，仅作全局兜底；实际调用使用用户自己配置的 Key）
 DEEPSEEK_API_KEY=your-deepseek-api-key
 
 # Tavily（联网搜索）
 TAVILY_API_KEY=your-tavily-api-key
 
-# 嵌入 + 重排序（阿里云百炼，知识库需要）
+# 嵌入 + 重排序（可选，仅作全局兜底；实际调用使用用户自己配置的百炼 Key / Workspace ID）
 EMBEDDING_API_KEY=sk-ws-xxx
 RERANK_WORKSPACE_ID=llm-xxx
 RERANK_MODEL=qwen3-rerank
@@ -134,6 +137,9 @@ cd frontend && npm run build
 | **闲聊模式** | DeepSeek + Tool Calling（联网搜索、天气、时间） |
 | **研究模式** | 五 Agent 协作，主题规划 → 搜索 → 分析 → 撰写 → 审查 |
 | **知识库 RAG** | Markdown 文档上传，语义分块 + 向量召回(10) + 重排序(3) |
+| **报告广场** | 发布报告到广场，点赞/搜索/排序（登录可用） |
+| **首页统计** | 今日发布报告数、今日研究次数（公开） |
+| **用户 API Key** | 个人资料页配置 DeepSeek / 百炼 Key，按用户缓存客户端 |
 | **实时进度** | WebSocket 推送研究进度，可视化每个 Agent 工作状态 |
 | **Token 管理** | Redis 白名单，logout 后 Token 立即失效 |
 | **查询缓存** | User 缓存 + RAG 查询缓存，减少 DB 和 API 调用 |
@@ -214,6 +220,19 @@ cd backend && python -m backend.tests.ace_research_eval
 cd backend && python -m backend.tests.ace_eval_full
 ```
 
+## 报告广场
+
+- 用户在「我的报告」点击发布，报告（标题快照 + 正文）进入广场
+- 广场列表支持按标题/作者搜索、按点赞量或发布日期排序、点赞/取消点赞（每人每报告一次）
+- 报告正文从 `reports` 实时读取；取消发布或删除报告会级联清理分享与点赞记录
+
+## 用户 API Key
+
+- 用户在「个人资料 → 模型 API 配置」中填写自己的 DeepSeek API Key、阿里云百炼 API Key 和 Workspace ID（页面提供申请入口链接，模型名只读展示）
+- 后端按用户构建 LLM / Embedding 客户端并缓存；Key 变更后缓存自动失效
+- 未配置 Key 的用户无法使用对应功能：DeepSeek Key 缺失不能使用闲聊/研究，百炼 Key 缺失不能使用知识库
+- Key 仅存于数据库，接口只返回掩码（`sk-****1234`）
+
 ## 研究模式流程
 
 ```
@@ -255,7 +274,7 @@ AceResearch/
 │   ├── models/                   # SQLAlchemy ORM 模型
 │   ├── schemas/                  # Pydantic Schema
 │   ├── config/                   # 配置 (settings / agents / prompts / knowledge_base)
-│   ├── utils/                    # 工具 (auth / ws_manager / redis)
+│   ├── utils/                    # 工具 (auth / user_llm 按用户构建模型客户端 / ws_manager / redis)
 │   └── tests/                    # 评测脚本
 ├── frontend/
 │   └── src/
@@ -282,12 +301,16 @@ AceResearch/
 | GET  | `/api/user/me` | 获取当前用户信息 |
 | PUT  | `/api/user/profile` | 更新个人资料（自动失效 User 缓存） |
 | POST | `/api/user/avatar` | 上传头像 |
+| GET  | `/api/user/apikeys` | 获取 API Key 配置状态（掩码）与只读模型名 |
+| POST | `/api/user/apikeys` | 保存 API Key（DeepSeek / 百炼 / Workspace ID） |
+| POST | `/api/user/apikeys/delete` | 清除指定的 API Key |
 
 ### 对话
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET    | `/api/chat/conversations` | 对话列表 |
+| POST   | `/api/chat/conversations/{id}/title` | 重命名对话 |
 | DELETE | `/api/chat/conversations/{id}` | 删除对话 |
 | GET    | `/api/chat/conversations/{id}/messages` | 消息历史 |
 | GET    | `/api/chat/conversations/{id}/report` | 获取研究报告 |
@@ -314,9 +337,20 @@ AceResearch/
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET    | `/api/reports/` | 报告列表 |
+| GET    | `/api/reports/` | 报告列表（含发布状态） |
 | GET    | `/api/reports/{id}` | 报告详情 |
 | DELETE | `/api/reports/{id}` | 删除报告 |
+
+### 报告广场
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET    | `/api/plaza/stats/today` | 今日统计（公开）：发布报告数 / 研究次数 |
+| GET    | `/api/plaza/reports` | 广场列表（标题/作者搜索，点赞量/日期排序，分页） |
+| GET    | `/api/plaza/reports/{id}` | 广场报告全文 |
+| POST   | `/api/plaza/reports/{id}/like` | 点赞 / 取消点赞 |
+| POST   | `/api/plaza/publish/{report_id}` | 发布报告到广场 |
+| DELETE | `/api/plaza/publish/{report_id}` | 从广场取消发布 |
 
 ### WebSocket
 
@@ -337,13 +371,13 @@ AceResearch/
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token 过期（分钟） | `30` | 否 |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh Token 过期（天） | `7` | 否 |
 | `REDIS_URL` | Redis 连接地址 | `redis://localhost:6379/0` | 是 |
-| `DEEPSEEK_API_KEY` | DeepSeek API Key | - | 是 |
+| `DEEPSEEK_API_KEY` | DeepSeek API Key（全局兜底，实际由用户配置） | - | 否 |
 | `DEEPSEEK_BASE_URL` | DeepSeek API 地址 | `https://api.deepseek.com/v1` | 否 |
 | `DEEPSEEK_MODEL` | 模型名 | `deepseek-v4-flash` | 否 |
 | `DEEPSEEK_MAX_TOKENS` | 最大输出 Token | `8192` | 否 |
 | `TAVILY_API_KEY` | Tavily 搜索 Key | - | 是 |
-| `EMBEDDING_API_KEY` | 百炼 API Key | - | 知识库需要 |
-| `RERANK_WORKSPACE_ID` | 百炼 Workspace ID | - | 知识库需要 |
+| `EMBEDDING_API_KEY` | 百炼 API Key（全局兜底，实际由用户配置） | - | 否 |
+| `RERANK_WORKSPACE_ID` | 百炼 Workspace ID（全局兜底，实际由用户配置） | - | 否 |
 | `RERANK_MODEL` | 重排序模型 | `qwen3-rerank` | 否 |
 | `RERANK_TOP_N` | 重排序返回条数 | `3` | 否 |
 | `CHUNK_SIZE` | 分块大小（字符） | `800` | 否 |
@@ -360,12 +394,16 @@ AceResearch/
 
 | 表 | 说明 | 关键字段 |
 |----|------|----------|
-| `users` | 用户 | id, username, email, password_hash, photo, memory, kb_memory |
+| `users` | 用户 | id, username, email, password_hash, photo, memory, kb_memory, deepseek_api_key, dashscope_api_key, dashscope_workspace_id |
 | `conversations` | 对话 | id, user_id, title, mode (chat/research/knowledge) |
 | `messages` | 消息 | id, conversation_id, role, content, msg_type |
 | `reports` | 报告 | id, conversation_id, title, content, status, reviewer_rewrite_count |
+| `report_shares` | 广场发布 | id, report_id, publisher_id, title, like_count |
+| `report_likes` | 广场点赞 | id, share_id, user_id（联合唯一） |
 | `knowledge_documents` | 文档 | id, user_id, title, file_type, chunk_count, status |
 | `agent_prompts` | 提示词 | id, mode, stage, content |
+
+> users 表的 API Key 相关字段由后端启动时幂等迁移自动添加，无需手动执行 SQL。
 
 ### ChromaDB
 
