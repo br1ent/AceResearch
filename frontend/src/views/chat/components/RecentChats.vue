@@ -18,8 +18,10 @@ async function loadConversations() {
   loading.value = true
   await chatStore.fetchConversations()
   loading.value = false
+  // 自动选中最近一条与当前模式相同的对话，避免切换模式后被其他模式的对话抢占
   if (chatStore.conversations.length > 0 && !chatStore.currentConvId) {
-    selectChat(chatStore.conversations[0])
+    const match = chatStore.conversations.find(c => c.mode === chatStore.mode)
+    if (match) selectChat(match)
   }
 }
 

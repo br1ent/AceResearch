@@ -19,12 +19,20 @@ export const useChatStore = defineStore('chat', () => {
   const planPanelOpen = ref(false)
 
   // ---- 模式切换 ----
-  function switchMode(newMode) {
-    if (isResearching.value || isChatting.value) return
+  function switchMode(newMode, force = false) {
+    if (!force && (isResearching.value || isChatting.value)) return
     mode.value = newMode
     currentConvId.value = null
     messages.value = []
     currentPlan.value = null
+    if (force) {
+      _abortController?.abort()
+      _abortController = null
+      isResearching.value = false
+      researchingConvId.value = null
+      researchProgress.value = 0
+      researchMessage.value = ''
+    }
   }
 
   // ---- 对话列表 ----
