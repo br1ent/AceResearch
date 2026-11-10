@@ -33,6 +33,25 @@ def _get_owned_report(db: Session, report_id: int, user_id: int) -> Report:
     return report
 
 
+@router.get("/stats/today")
+def get_today_stats(db: Session = Depends(get_db)):
+    """今日统计（公开）：今日发布报告数量、今日研究次数"""
+    from datetime import datetime
+
+    from models.project import Report
+
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    published = db.query(ReportShare).filter(ReportShare.create_at >= today_start).count()
+    researches = db.query(Report).filter(Report.create_at >= today_start).count()
+    return {
+        "success": True,
+        "data": {
+            "published_reports_today": published,
+            "researches_today": researches,
+        },
+    }
+
+
 @router.get("/reports")
 def list_plaza_reports(
     keyword: str = Query(default="", description="搜索报告标题或作者名称"),
