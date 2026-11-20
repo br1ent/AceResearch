@@ -137,3 +137,5 @@ dist-ssr/
 *.tmp
 *.temp
 .cache/
+
+doc/补齐路线图_AceResearch.md
