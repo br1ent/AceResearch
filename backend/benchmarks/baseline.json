@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "generated_at": "2026-11-20T13:22:37.139446+00:00",
+    "model": "deepseek-v4-flash",
+    "user_email": "brent@qq.com",
+    "runs": 3,
+    "completed": 3,
+    "failed": 0
+  },
+  "end_to_end_ms": {
+    "p50": 124432.8,
+    "p95": 124448.0,
+    "avg": 118170.5,
+    "samples": [
+      105629.1,
+      124432.8,
+      124449.7
+    ]
+  },
+  "per_node_ms": {
+    "planner": {
+      "p50": 6596.2,
+      "p95": 6878.9,
+      "avg": 6241.4,
+      "count": 3
+    },
+    "researcher": {
+      "p50": 7588.4,
+      "p95": 12527.3,
+      "avg": 8832.3,
+      "count": 3
+    },
+    "analyst": {
+      "p50": 33662.5,
+      "p95": 38123.6,
+      "avg": 34160.7,
+      "count": 3
+    },
+    "writer": {
+      "p50": 55344.7,
+      "p95": 63341.6,
+      "avg": 55708.3,
+      "count": 3
+    },
+    "reviewer": {
+      "p50": 7586.3,
+      "p95": 7760.4,
+      "avg": 7582.0,
+      "count": 3
+    },
+    "summarizer": {
+      "p50": 4435.3,
+      "p95": 6172.6,
+      "avg": 4601.1,
+      "count": 3
+    }
+  },
+  "tokens": {
+    "per_report_avg": {
+      "input": 47325.3,
+      "output": 16645.7,
+      "total": 63971.0
+    },
+    "by_node": {
+      "planner": {
+        "input_tokens": 204.7,
+        "output_tokens": 953.7,
+        "total_tokens": 1158.3,
+        "prompt_cache_cache_read": 0.0
+      },
+      "analyst": {
+        "input_tokens": 31243.7,
+        "output_tokens": 5457.3,
+        "total_tokens": 36701.0,
+        "prompt_cache_cache_read": 0.0
+      },
+      "writer": {
+        "input_tokens": 9610.3,
+        "output_tokens": 8384.7,
+        "total_tokens": 17995.0,
+        "prompt_cache_cache_read": 0.0
+      },
+      "reviewer": {
+        "input_tokens": 4816.3,
+        "output_tokens": 1062.7,
+        "total_tokens": 5879.0,
+        "prompt_cache_cache_read": 0.0
+      },
+      "summarizer": {
+        "input_tokens": 1450.3,
+        "output_tokens": 787.3,
+        "total_tokens": 2237.7,
+        "prompt_cache_cache_read": 0.0
+      }
+    }
+  },
+  "rewrite": {
+    "rate": 0.0,
+    "rewrites": 0,
+    "reports": 3
+  }
+}

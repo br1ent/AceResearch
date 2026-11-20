@@ -247,6 +247,31 @@ cd backend && python -m backend.tests.ace_eval_full
   → 报告保存到"我的报告"
 ```
 
+## 性能基线（第 0 步）
+
+> 先量基线，再谈优化。数据由 `backend/benchmarks/` 脚本生成，可复现。
+
+```bash
+# 研究流水线（端到端 / 每节点时延 / token / 打回率），建议 --runs 20 取正式基线
+cd backend && python -m backend.benchmarks.run_baseline --runs 20
+
+# RAG 缓存（命中率 / 命中与未命中时延）
+cd backend && python -m backend.benchmarks.run_rag_cache
+```
+
+> 下表为 3 篇冒烟结果（`--runs 3`，P50/P95 因样本少会偏近）。正式基线请用 20 篇。
+
+| 指标 | 基线值 | 说明 |
+|------|--------|------|
+| 端到端时延 P50 / P95 | 124.4s / 124.4s | 提交主题 → 报告完成 + 总结 |
+| 每报告 token（input/output） | 47.3K / 16.6K（总 64.0K） | 五节点 + 总结累计 |
+| 每节点时延 P50 | Planner 6.6s · Researcher 7.6s · Analyst 33.7s · Writer 55.3s · Reviewer 7.6s · Summarizer 4.4s | 瓶颈在 Writer/Analyst（LLM 生成），不在搜索 |
+| Reviewer 打回率 | 0%（0/3） | 触发重写次数 / 报告数 |
+| Prompt 缓存命中 token | 0 | `input_token_details.cache_read`，基线阶段尚未命中 |
+| RAG 缓存 | 重复查询命中率 100% · 命中 0.5ms vs 未命中 1.79s（加速 ~3581×） | 二次查询 Redis 直返，省 embedding + rerank |
+
+数据落地：`backend/benchmarks/baseline.json`（研究）、`backend/benchmarks/baseline_rag_cache.json`（缓存）。
+
 ## Redis 缓存设计
 
 | 功能 | Key | TTL | 说明 |

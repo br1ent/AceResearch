@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "generated_at": "2026-11-20T13:25:31.138643+00:00",
+    "user_email": "brent@qq.com",
+    "queries": 41
+  },
+  "cache": {
+    "hits": 41,
+    "misses": 41,
+    "total": 82,
+    "hit_rate": 0.5
+  },
+  "latency_ms": {
+    "hit": {
+      "p50": 0.5,
+      "p95": 0.6,
+      "avg": 0.5,
+      "count": 41
+    },
+    "miss": {
+      "p50": 1737.2,
+      "p95": 2114.9,
+      "avg": 1790.6,
+      "count": 41
+    }
+  }
+}
