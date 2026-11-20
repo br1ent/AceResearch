@@ -83,11 +83,12 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
 
         # P5: 查询缓存
         cache_key = f"rag:{user_id}:{hashlib.md5(query.encode()).hexdigest()}"
+        _t = time.perf_counter()
         cached = _redis.get(cache_key)
         if cached:
             if telemetry.is_enabled():
                 _redis.incr(hit_key)
-                telemetry.record("rag_retrieval", cache="hit")
+                telemetry.record("rag_retrieval", latency_ms=(time.perf_counter() - _t) * 1000.0, cache="hit")
             return cached
 
         start = time.perf_counter()
