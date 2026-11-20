@@ -64,6 +64,10 @@ def disable() -> None:
     _collector.disable()
 
 
+def is_enabled() -> bool:
+    return _collector.enabled
+
+
 def records() -> list[dict[str, Any]]:
     return _collector.records()
 

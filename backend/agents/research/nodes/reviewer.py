@@ -10,6 +10,7 @@ from config.prompts import get_research_prompt
 from agents.research.state import ResearchState
 from utils.logger import review_logger
 from utils.user_llm import get_chat_llm
+from utils.telemetry import timed
 
 settings = get_agent_settings()
 
@@ -46,10 +47,10 @@ async def _extract_json(text: str, user_id: int) -> dict | None:
 
     # 第四层：用 LLM 修复
     try:
-        resp = await get_chat_llm(user_id, temperature=0.0, max_tokens=1024).ainvoke([
+        resp = await timed("reviewer_json_fix", get_chat_llm(user_id, temperature=0.0, max_tokens=1024).ainvoke([
             ("system", "你是一个 JSON 修复器。提取下面文本中的 JSON 对象（包含 passed、issues、suggestions 字段），只输出 JSON，不要其他内容。"),
             ("human", text[:2000]),
-        ])
+        ]))
         fixed = resp.content.strip()
         if fixed.startswith("```"):
             fixed = fixed.split("\n", 1)[1] if "\n" in fixed else fixed[3:]
@@ -81,11 +82,11 @@ async def reviewer_node(state: ResearchState) -> dict:
     ])
 
     chain = prompt | get_chat_llm(state["user_id"], temperature=0.0, max_tokens=1024)
-    response = await chain.ainvoke({
+    response = await timed("reviewer", chain.ainvoke({
         "title": report_title,
         "outline": outline_text,
         "report": state["report_draft"][:8000],
-    })
+    }))
 
     review = await _extract_json(response.content, state["user_id"])
 

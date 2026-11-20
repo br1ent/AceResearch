@@ -7,6 +7,7 @@ from config.agents import get_agent_settings
 from config.prompts import get_research_prompt
 from agents.research.state import ResearchState, ResearchSubtask
 from utils.user_llm import get_chat_llm
+from utils.telemetry import timed
 
 settings = get_agent_settings()
 
@@ -24,7 +25,7 @@ async def planner_node(state: ResearchState) -> dict:
         temperature=settings.PLANNER_TEMPERATURE,
         max_tokens=settings.DEEPSEEK_MAX_TOKENS,
     )
-    response = await chain.ainvoke({"topic": state["topic"]})
+    response = await timed("planner", chain.ainvoke({"topic": state["topic"]}))
 
     text = response.content.strip()
     if text.startswith("```"):

@@ -1,10 +1,12 @@
 """知识库检索服务（召回 + 重排序 + 查询缓存）"""
 
 import hashlib
+import time
 
 import httpx
 from services.knowledge_base.document_service import _get_collection
 from config.knowledge_base import get_kb_settings
+from utils import telemetry
 from utils.redis import get_redis
 from utils.user_llm import get_effective_keys, get_embeddings
 
@@ -66,6 +68,14 @@ def _rerank(user_id: int, query: str, documents: list[str]) -> list[dict] | None
 
 def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
     """搜索知识库（向量召回 + 重排序 + 缓存），返回格式化的文本块"""
+    hit_key = f"rag:stats:{user_id}:hit"
+    miss_key = f"rag:stats:{user_id}:miss"
+
+    def _mark_miss(start: float) -> None:
+        if telemetry.is_enabled():
+            _redis.incr(miss_key)
+            telemetry.record("rag_retrieval", latency_ms=(time.perf_counter() - start) * 1000.0, cache="miss")
+
     try:
         collection = _get_collection(user_id)
         if collection.count() == 0:
@@ -75,7 +85,12 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
         cache_key = f"rag:{user_id}:{hashlib.md5(query.encode()).hexdigest()}"
         cached = _redis.get(cache_key)
         if cached:
+            if telemetry.is_enabled():
+                _redis.incr(hit_key)
+                telemetry.record("rag_retrieval", cache="hit")
             return cached
+
+        start = time.perf_counter()
 
         # 向量召回（固定 10 条候选）
         recall_k = min(collection.count(), kb_settings.RECALL_K)
@@ -87,6 +102,7 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
         )
 
         if not results["documents"] or not results["documents"][0]:
+            _mark_miss(start)
             return "未找到相关内容"
 
         docs = results["documents"][0]
@@ -103,6 +119,7 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
                 lines.append(f"[来源 {i}] 文档：{title}\n内容：{content}")
             result = "\n\n".join(lines)
             _redis.setex(cache_key, RAG_CACHE_TTL, result)
+            _mark_miss(start)
             return result
 
         # 重排序不可用，用原始向量距离排序（仅返回 top-3）
@@ -112,6 +129,25 @@ def search_knowledge(user_id: int, query: str, top_k: int = 5) -> str:
             lines.append(f"[来源 {i}] 文档：{title}\n内容：{doc}")
         result = "\n\n".join(lines)
         _redis.setex(cache_key, RAG_CACHE_TTL, result)
+        _mark_miss(start)
         return result
     except Exception as e:
         return f"知识库检索失败：{e}"
+
+
+def get_cache_stats(user_id: int) -> dict:
+    """读取该用户的 RAG 查询缓存命中/未命中计数"""
+    hits = int(_redis.get(f"rag:stats:{user_id}:hit") or 0)
+    misses = int(_redis.get(f"rag:stats:{user_id}:miss") or 0)
+    total = hits + misses
+    return {
+        "hits": hits,
+        "misses": misses,
+        "total": total,
+        "hit_rate": round(hits / total, 4) if total else None,
+    }
+
+
+def reset_cache_stats(user_id: int) -> None:
+    """清零该用户的 RAG 缓存命中/未命中计数（基准开始前调用）"""
+    _redis.delete(f"rag:stats:{user_id}:hit", f"rag:stats:{user_id}:miss")

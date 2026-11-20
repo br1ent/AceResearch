@@ -5,6 +5,7 @@ from config.agents import get_agent_settings
 from config.prompts import get_research_prompt
 from agents.research.state import ResearchState
 from utils.user_llm import get_chat_llm
+from utils.telemetry import timed
 
 settings = get_agent_settings()
 
@@ -26,10 +27,10 @@ async def analyst_node(state: ResearchState) -> dict:
         temperature=settings.DEEPSEEK_TEMPERATURE,
         max_tokens=settings.DEEPSEEK_MAX_TOKENS,
     )
-    response = await chain.ainvoke({
+    response = await timed("analyst", chain.ainvoke({
         "topic": state["topic"],
         "search_materials": search_materials or "（无搜索结果）",
-    })
+    }))
 
     return {
         "analysis": response.content,
