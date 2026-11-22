@@ -13,6 +13,7 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
 
 - **多 Agent 协作** — Planner、Researcher、Analyst、Writer、Reviewer 五个 Agent 自动完成深度研究
 - **研究流水线** — 主题规划 → 并行搜索 → 综合分析 → 报告撰写 → 质量审查（最多 2 次重写），全流程自动化
+- **并发与可靠性** — Researcher 基于 asyncio.gather 并行检索，Semaphore 限流 + 单路超时降级 + 来源不足显式失败
 - **RAG 知识库** — 上传 Markdown 文档，语义分块 + 向量检索 + 重排序，精准文档问答
 - **流式对话** — SSE 实时推送，用户即时看到 AI 回复内容
 - **独立记忆** — 闲聊和知识库对话各自拥有独立记忆，知识库模式每轮独立检索无历史污染
@@ -20,6 +21,7 @@ AceResearch 是一个基于大语言模型的智能研究平台，通过多个 A
 - **用户级 API Key** — 用户在个人资料页配置自己的 DeepSeek / 阿里云百炼 Key，未配置则对应功能不可用
 - **Token 安全** — Redis 白名单机制，logout 后 Token 立即失效
 - **查询缓存** — RAG 相同查询 10 分钟内直接返回缓存结果，减少 API 调用
+- **结构化日志** — loguru 结构化日志 + 关联 ID 追踪单份报告跨节点链路，按节点/状态/日期分文件、保留 7 天
 
 ## 快速开始
 
@@ -143,6 +145,7 @@ cd frontend && npm run build
 | **实时进度** | WebSocket 推送研究进度，可视化每个 Agent 工作状态 |
 | **Token 管理** | Redis 白名单，logout 后 Token 立即失效 |
 | **查询缓存** | User 缓存 + RAG 查询缓存，减少 DB 和 API 调用 |
+| **结构化日志** | loguru 关联 ID + 节点耗时/token 埋点，按节点/状态/日期分文件 |
 
 ## 系统架构
 
@@ -180,6 +183,7 @@ cd frontend && npm run build
 | **搜索引擎** | Tavily Search API |
 | **前端** | Vue 3 + Vite + Pinia + Tailwind CSS 4 + DaisyUI 5 |
 | **认证** | JWT + BCrypt + Redis 黑名单 |
+| **日志** | loguru（结构化 JSON + 关联 ID + 每日滚动） |
 
 ## 知识库 RAG
 
@@ -213,11 +217,11 @@ cd frontend && npm run build
 ### 评测
 
 ```bash
-# RAG 检索准确率（Recall@3 / MRR）
-cd backend && python -m backend.tests.ace_research_eval
+# RAG 检索准确率（41 条查询，Recall@3 / MRR）
+cd backend && python -m backend.tests.ace_eval_rag
 
-# 完整评测（RAG 30 条 + 报告重写率 7 篇）
-cd backend && python -m backend.tests.ace_eval_full
+# 报告重写率评测（5 篇）
+cd backend && python -m backend.tests.ace_eval_rewrite
 ```
 
 ## 报告广场
@@ -239,7 +243,7 @@ cd backend && python -m backend.tests.ace_eval_full
 用户提交主题
   → Planner 生成大纲 + 子任务
   → 用户确认/修改方案（WebSocket 推送）
-  → Researcher 并行搜索资料（Tavily）
+  → Researcher 并行搜索资料（Tavily，Semaphore 限流 + 单路超时降级 + 来源不足兜底）
   → Analyst 综合分析结果
   → Writer 撰写报告
   → Reviewer 质量评估（最多重写 2 次）
@@ -257,6 +261,9 @@ cd backend && python -m backend.benchmarks.run_baseline --runs 20
 
 # RAG 缓存（命中率 / 命中与未命中时延）
 cd backend && python -m backend.benchmarks.run_rag_cache
+
+# 检索并发（串行 vs 并行加速比）
+cd backend && python -m backend.benchmarks.run_concurrency
 ```
 
 > 下表为 3 篇冒烟结果（`--runs 3`，P50/P95 因样本少会偏近）。正式基线请用 20 篇。
@@ -269,8 +276,28 @@ cd backend && python -m backend.benchmarks.run_rag_cache
 | Reviewer 打回率 | 0%（0/3） | 触发重写次数 / 报告数 |
 | Prompt 缓存命中 token | 0 | `input_token_details.cache_read`，基线阶段尚未命中 |
 | RAG 缓存 | 重复查询命中率 100% · 命中 0.5ms vs 未命中 1.79s（加速 ~3581×） | 二次查询 Redis 直返，省 embedding + rerank |
+| 检索并发 | 串行 14.4s → 并行 3.9s（3.73×） | asyncio.gather + Semaphore(5) 并行检索 |
 
 数据落地：`backend/benchmarks/baseline.json`（研究）、`backend/benchmarks/baseline_rag_cache.json`（缓存）。
+
+## 日志系统
+
+基于 loguru 的结构化日志，三个输出：
+
+| Sink | 用途 |
+|------|------|
+| 控制台 | 开发时实时查看 |
+| `log/{节点}_{状态}_{日期}.log` | 人看，按 Agent 节点 / 错误级别 / 日期分文件 |
+| `log/app.jsonl` | 机器看，结构化 JSON，用于检索统计 |
+
+- **关联 ID**：`conversation_id` / `report_id` / `user_id` 通过 loguru `contextualize`（contextvars）绑定，随 asyncio 任务自动传播，单份报告跨 5 个节点的日志带同一 `report_id`，可 `grep` 还原完整链路。
+- **节点 span**：每个 Agent 节点完成时记一条「节点 + 时延 + token」日志，实时看到瓶颈与成本分布。
+- **文件命名**：`{模块名称}_{状态}_{年-月-日}.log`，模块名称 = Agent 节点名（非节点日志归入 `app`），状态分 `error`（WARNING 及以上）/ `info`（其余）。
+- **滚动与保留**：每日 0 点自然滚动到新文件，自动清理 7 天前的日志。
+
+```
+2026-11-22 21:04:25.205 | INFO | conv=12 report=45 | summarizer | summarizer 完成 | 3.1s | 2051 tokens
+```
 
 ## Redis 缓存设计
 
@@ -299,8 +326,9 @@ AceResearch/
 │   ├── models/                   # SQLAlchemy ORM 模型
 │   ├── schemas/                  # Pydantic Schema
 │   ├── config/                   # 配置 (settings / agents / prompts / knowledge_base)
-│   ├── utils/                    # 工具 (auth / user_llm 按用户构建模型客户端 / ws_manager / redis)
-│   └── tests/                    # 评测脚本
+│   ├── utils/                    # 工具 (auth / user_llm / logger / telemetry / ws_manager / redis)
+│   ├── benchmarks/               # 基准评测脚本 (baseline / rag_cache / concurrency)
+│   └── tests/                    # 评测脚本 (检索评估 / 报告重写率)
 ├── frontend/
 │   └── src/
 │       ├── views/                # 页面 (聊天 / 知识库 / 报告 / 用户)
