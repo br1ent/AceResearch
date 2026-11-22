@@ -23,6 +23,9 @@ class AgentSettings(BaseSettings):
     # Agent 行为控制
     PLANNER_TEMPERATURE: float = 0.5
     RESEARCHER_MAX_RESULTS: int = 5
+    RESEARCHER_MAX_CONCURRENCY: int = 5   # 并行搜索并发上限（Semaphore 限流）
+    RESEARCHER_TIMEOUT_SECONDS: float = 8.0  # 单路搜索超时（秒），失败降级为无结果
+    RESEARCHER_MIN_SOURCES: int = 2       # 可用来源低于此值时显式失败，不返回残缺报告
     WRITER_TEMPERATURE: float = 0.6
     REVIEWER_MAX_RETRIES: int = 2
     REVIEWER_PASS_THRESHOLD: float = 5.0  # 平均分 >= 此值即使 LLM 判 false 也放行（0 禁用）
