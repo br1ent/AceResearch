@@ -7,6 +7,7 @@ from agents.research.graph import PlanningWorkflow, ExecutionWorkflow
 from config.database import SessionLocal
 from models.project import Report
 from utils.ws_manager import manager
+from utils.logger import logger
 
 planning_workflow = PlanningWorkflow()
 execution_workflow = ExecutionWorkflow()
@@ -32,7 +33,8 @@ class ResearchService:
 
         # 后台运行 Planner
         import asyncio
-        asyncio.create_task(self._run_planning(conversation_id, user_id, topic, report.id))
+        with logger.contextualize(conversation_id=conversation_id, report_id=report.id, user_id=user_id):
+            asyncio.create_task(self._run_planning(conversation_id, user_id, topic, report.id))
 
         return {"success": True, "message": "研究已启动", "data": {"conversation_id": conversation_id, "report_id": report.id}}
 
@@ -76,8 +78,7 @@ class ResearchService:
                 "progress": 20,
             })
         except Exception as e:
-            import traceback
-            print(f"[Planning] ERROR: {e}"); traceback.print_exc()
+            logger.exception("Planning 失败: {}", e)
             await manager.broadcast(conversation_id, {"type": "error", "message": str(e)})
         finally:
             db.close()
@@ -96,7 +97,8 @@ class ResearchService:
         self.db.commit()
 
         import asyncio
-        asyncio.create_task(self._run_revise_plan(conversation_id, user_id, report_id, feedback))
+        with logger.contextualize(conversation_id=conversation_id, report_id=report_id, user_id=user_id):
+            asyncio.create_task(self._run_revise_plan(conversation_id, user_id, report_id, feedback))
         return {"success": True, "message": "正在重新规划"}
 
     async def _run_revise_plan(self, conversation_id: int, user_id: int, report_id: int, feedback: str):
@@ -142,8 +144,7 @@ class ResearchService:
                 "progress": 20,
             })
         except Exception as e:
-            import traceback
-            print(f"[RevisePlan] ERROR: {e}"); traceback.print_exc()
+            logger.exception("RevisePlan 失败: {}", e)
             await manager.broadcast(conversation_id, {"type": "error", "message": str(e)})
         finally:
             db.close()
@@ -167,7 +168,8 @@ class ResearchService:
         await manager.broadcast(conversation_id, {"type": "agent_status", "agent": "researcher", "status": "running", "progress": 25, "message": "正在搜索资料..."})
 
         import asyncio
-        asyncio.create_task(self._run_execution(conversation_id, user_id, outline, subtasks, report_id))
+        with logger.contextualize(conversation_id=conversation_id, report_id=report_id, user_id=user_id):
+            asyncio.create_task(self._run_execution(conversation_id, user_id, outline, subtasks, report_id))
 
         return {"success": True, "message": "研究执行已启动"}
 
@@ -272,9 +274,8 @@ class ResearchService:
                 await manager.broadcast(conversation_id, {"type": "error", "message": error})
 
         except Exception as e:
-            import traceback
             error_detail = f"{type(e).__name__}: {str(e)}"
-            print(f"[Execution] ERROR: {error_detail}"); traceback.print_exc()
+            logger.exception("Execution 失败: {}", error_detail)
             await manager.broadcast(conversation_id, {"type": "error", "message": error_detail})
         finally:
             db.close()

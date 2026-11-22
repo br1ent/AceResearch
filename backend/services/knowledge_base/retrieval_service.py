@@ -7,6 +7,7 @@ import httpx
 from services.knowledge_base.document_service import _get_collection
 from config.knowledge_base import get_kb_settings
 from utils import telemetry
+from utils.logger import logger
 from utils.redis import get_redis
 from utils.user_llm import get_effective_keys, get_embeddings
 
@@ -61,7 +62,7 @@ def _rerank(user_id: int, query: str, documents: list[str]) -> list[dict] | None
             sorted_results = sorted(results, key=lambda r: r.get("relevance_score", 0), reverse=True)
             return sorted_results
     except Exception as e:
-        print(f"[Rerank] ERROR: {e}")
+        logger.warning("Rerank 失败: {}", e)
 
     return None
 

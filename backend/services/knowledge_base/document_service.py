@@ -10,6 +10,7 @@ from config.knowledge_base import get_kb_settings
 from config.database import SessionLocal
 from models.knowledge_base import KnowledgeDocument
 from utils.user_llm import get_embeddings
+from utils.logger import logger
 
 kb_settings = get_kb_settings()
 
@@ -185,7 +186,7 @@ async def _process_document(doc_id: int, text: str, user_id: int):
         except Exception as e:
             doc.status = "failed"
             db.commit()
-            print(f"[KB] Process error: {e}")
+            logger.exception("KB 文档处理失败: {}", e)
     finally:
         db.close()
 

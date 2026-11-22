@@ -17,6 +17,8 @@ import threading
 import time
 from typing import Any, Awaitable
 
+from utils.logger import logger
+
 
 class _Collector:
     def __init__(self) -> None:
@@ -77,7 +79,9 @@ def reset() -> None:
 
 
 def record(node: str, latency_ms: float | None = None, **extra: Any) -> None:
-    """记录一条基准数据（无 token，例如搜索、重试计数）。"""
+    """记录一条基准数据（无 token，例如搜索、重试计数），同时写 DEBUG 日志。"""
+    logger.debug("{} {}", node, extra if extra else "-", node=node,
+                 latency_ms=round(latency_ms, 3) if latency_ms is not None else None, **extra)
     if not _collector.enabled:
         return
     entry: dict[str, Any] = {"node": node, **extra}
@@ -125,12 +129,26 @@ def extract_usage(response: Any) -> dict[str, int] | None:
 
 
 async def timed(node: str, awaitable: Awaitable[Any], **extra: Any) -> Any:
-    """对 awaitable 计时并记录（结果若含 token 用量则一并记录），返回其结果。"""
+    """对 awaitable 计时并记录（结果若含 token 用量则一并记录），返回其结果。
+
+    同时写一条 INFO 日志（节点 + 时延 + token），作为生产环境的节点 span 可观测。
+    """
     start = time.perf_counter()
     result = await awaitable
     latency_ms = (time.perf_counter() - start) * 1000.0
-    entry: dict[str, Any] = {"node": node, "latency_ms": round(latency_ms, 3), **extra}
     tokens = extract_usage(result)
+    total = tokens.get("total_tokens") if tokens else None
+    logger.info(
+        "{} 完成 | {}s | {} tokens",
+        node,
+        round(latency_ms / 1000.0, 1),
+        total if total is not None else "-",
+        node=node,
+        latency_ms=round(latency_ms, 3),
+        tokens=tokens,
+        **extra,
+    )
+    entry: dict[str, Any] = {"node": node, "latency_ms": round(latency_ms, 3), **extra}
     if tokens:
         entry["tokens"] = tokens
     _collector.add(entry)

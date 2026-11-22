@@ -8,6 +8,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from config.agents import get_agent_settings
 from agents.research.state import ResearchState, ResearchSubtask, SearchResultItem
 from utils.telemetry import record
+from utils.logger import logger
 
 settings = get_agent_settings()
 
@@ -83,6 +84,19 @@ async def researcher_node(state: ResearchState) -> dict:
     record("researcher", latency_ms=latency_ms,
            n_results=len(all_results), n_subtasks=len(subtasks),
            failed_subtasks=len(subtasks) - n_ok)
+    logger.info(
+        "{} 完成 | {}s | {} 结果 / {} 子任务（{} 成功）",
+        "researcher",
+        round(latency_ms / 1000.0, 1),
+        len(all_results),
+        len(subtasks),
+        n_ok,
+        node="researcher",
+        latency_ms=round(latency_ms, 3),
+        n_results=len(all_results),
+        n_subtasks=len(subtasks),
+        n_ok=n_ok,
+    )
 
     # 兜底：可用来源低于阈值时显式失败，避免把残缺结果交给下游
     if n_ok < settings.RESEARCHER_MIN_SOURCES:

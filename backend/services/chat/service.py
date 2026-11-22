@@ -7,6 +7,7 @@ from agents.chat.state import ChatState
 from agents.chat.tools import CHAT_TOOLS, KB_TOOLS
 from agents.chat.nodes.tool_node import tool_node
 from utils.user_llm import get_chat_llm
+from utils.logger import logger
 
 settings = get_agent_settings()
 
@@ -115,7 +116,7 @@ class ChatService:
                         full_reply += chunk.content
                         yield chunk.content
             except Exception as e:
-                print(f"[ChatStream] LLM stream error: {e}")
+                logger.warning("ChatStream LLM 流式输出失败: {}", e)
                 if full_reply:
                     break
                 full_reply = "抱歉，请求超时，请重试"
